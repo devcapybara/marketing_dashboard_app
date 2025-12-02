@@ -348,7 +348,7 @@ CATATAN PENTING
    - Summary cards: Total Biaya Marketing, Total Leads, Total Pelanggan, Omset, CAC, ROAS
    - Total Impression Bulan ini
    - Prospect stages dengan Biaya Per Lead, Biaya Per Closing
-
+10. setiap pengembang AI maupun manusia wajib membuat branch baru agar tidak merusak main branch
 ================================================================================
 KONTAK & SUPPORT
 ================================================================================
