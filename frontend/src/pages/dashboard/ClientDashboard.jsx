@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import SummaryCard from '../../components/common/SummaryCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ImpressionSourceChart from '../../components/charts/ImpressionSourceChart';
+import FunnelChart from '../../components/charts/FunnelChart';
 import { dashboardService } from '../../services/dashboardService';
 
 const ClientDashboard = () => {
@@ -80,29 +82,60 @@ const ClientDashboard = () => {
           <p className="text-dark-text-muted">Overview performa iklan Anda</p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Summary Cards - Sesuai Spreadsheet */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <SummaryCard
+            title="Total Biaya Marketing + PPN"
+            value={formatCurrency(summary?.totalSpend || 0)}
+            icon="💰"
+            className="bg-green-500/20 border-green-500"
+          />
+          <SummaryCard
+            title="Total Leads"
+            value={formatNumber(summary?.totalLeads || 0)}
+            icon="📋"
+          />
+          <SummaryCard
+            title="Omset"
+            value={formatCurrency(summary?.totalRevenue || 0)}
+            icon="📈"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <SummaryCard
+            title="CAC"
+            value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)}
+            subtitle="Customer Acquisition Cost"
+            icon="💵"
+          />
+          <SummaryCard
+            title="ROAS"
+            value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'}
+            subtitle="Return on Ad Spend"
+            icon="📊"
+          />
           <SummaryCard
             title="Total Ad Accounts"
             value={summary?.totalAdAccounts || 0}
             icon="📱"
           />
-          <SummaryCard
-            title="Total Spend"
-            value={formatCurrency(summary?.totalSpend || 0)}
-            icon="💰"
-          />
-          <SummaryCard
-            title="Total Revenue"
-            value={formatCurrency(summary?.totalRevenue || 0)}
-            icon="📈"
-          />
-          <SummaryCard
-            title="ROAS"
-            value={summary?.roas ? summary.roas.toFixed(2) : '0.00'}
-            subtitle="Return on Ad Spend"
-            icon="📊"
-          />
+        </div>
+
+        {/* Total Impression Bulan ini */}
+        <div className="card mb-8 bg-cyan-500/20 border-cyan-500">
+          <h2 className="text-xl font-semibold mb-2">Total Impression Bulan ini</h2>
+          <p className="text-4xl font-bold">{formatNumber(summary?.totalImpressions || 0)}</p>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {summary?.chartData?.impressionSource && (
+            <ImpressionSourceChart data={summary.chartData.impressionSource} />
+          )}
+          {summary?.chartData?.funnel && (
+            <FunnelChart data={summary.chartData.funnel} />
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

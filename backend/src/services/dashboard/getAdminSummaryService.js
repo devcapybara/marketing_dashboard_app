@@ -85,9 +85,42 @@ async function getAdminSummaryService(managedClientIds, filters = {}) {
           _id: '$platform',
           spend: { $sum: '$spend' },
           revenue: { $sum: '$revenue' },
+          impressions: { $sum: '$impressions' },
+          clicks: { $sum: '$clicks' },
+          leads: { $sum: '$leads' },
         },
       },
     ]);
+
+    // Get impression data per platform for chart
+    const impressionData = {
+      googleAds: 0,
+      metaAds: 0,
+      tiktokAds: 0,
+    };
+
+    platformMetrics.forEach((platform) => {
+      if (platform._id === 'GOOGLE') {
+        impressionData.googleAds = platform.impressions || 0;
+      } else if (platform._id === 'META') {
+        impressionData.metaAds = platform.impressions || 0;
+      } else if (platform._id === 'TIKTOK') {
+        impressionData.tiktokAds = platform.impressions || 0;
+      }
+    });
+
+    // Calculate CAC
+    const cac = metrics.totalLeads > 0 ? metrics.totalSpend / metrics.totalLeads : 0;
+
+    // Funnel data
+    const funnelData = {
+      totalLeads: metrics.totalLeads || 0,
+      noReply: 0,
+      justAsking: 0,
+      potential: 0,
+      closing: 0,
+      retention: 0,
+    };
 
     return {
       totalAdAccounts,
@@ -95,10 +128,15 @@ async function getAdminSummaryService(managedClientIds, filters = {}) {
       totalRevenue: metrics.totalRevenue,
       totalTopup,
       roas: parseFloat(roas.toFixed(2)),
+      cac: parseFloat(cac.toFixed(2)),
       totalImpressions: metrics.totalImpressions,
       totalClicks: metrics.totalClicks,
       totalLeads: metrics.totalLeads,
       platformMetrics,
+      chartData: {
+        impressionSource: impressionData,
+        funnel: funnelData,
+      },
     };
   } catch (error) {
     throw new Error('Failed to get admin summary');

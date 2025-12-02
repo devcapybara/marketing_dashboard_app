@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const ImpressionSourceChart = ({ data }) => {
   // Transform data untuk chart
@@ -6,14 +6,17 @@ const ImpressionSourceChart = ({ data }) => {
     {
       name: 'Google Ads',
       value: data?.googleAds || 0,
+      color: '#3B82F6', // Blue
     },
     {
       name: 'Meta Ads',
       value: data?.metaAds || 0,
+      color: '#EF4444', // Red
     },
     {
       name: 'TikTok Ads',
       value: data?.tiktokAds || 0,
+      color: '#F59E0B', // Yellow
     },
   ];
 
@@ -46,26 +49,16 @@ const ImpressionSourceChart = ({ data }) => {
               color: '#F3F4F6'
             }}
             formatter={(value) => new Intl.NumberFormat('id-ID').format(value)}
-          />
-          <Legend />
-          <Bar 
-            dataKey="value" 
-            fill="#3B82F6" 
-            name="Google Ads"
-            radius={[0, 4, 4, 0]}
+            labelFormatter={(label) => label}
           />
           <Bar 
             dataKey="value" 
-            fill="#EF4444" 
-            name="Meta Ads"
             radius={[0, 4, 4, 0]}
-          />
-          <Bar 
-            dataKey="value" 
-            fill="#F59E0B" 
-            name="TikTok Ads"
-            radius={[0, 4, 4, 0]}
-          />
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-4 flex justify-center gap-6">
@@ -87,4 +80,3 @@ const ImpressionSourceChart = ({ data }) => {
 };
 
 export default ImpressionSourceChart;
-
