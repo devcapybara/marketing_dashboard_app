@@ -1,0 +1,365 @@
+================================================================================
+PROMPT APLIKASI - MARKETING DASHBOARD
+================================================================================
+
+File ini ditujukan untuk AI atau developer lain yang ingin berkolaborasi atau
+melanjutkan pengembangan aplikasi Marketing Dashboard ini.
+
+================================================================================
+KONTEKS APLIKASI
+================================================================================
+
+Aplikasi ini adalah Marketing Dashboard berbasis MERN Stack untuk digital 
+marketer yang mengelola banyak klien dan perlu mengumpulkan data performa iklan 
+dari berbagai platform (Meta, TikTok, Google, dll) dalam satu dashboard 
+terpusat.
+
+MASALAH YANG DISELESAIKAN:
+- Sebelumnya menggunakan banyak file spreadsheet untuk setiap klien
+- Data tidak terorganisir dengan baik
+- Sulit untuk tracking dan analisis
+- Banyak file yang sulit dikelola
+- Data yang berulang-ulang harus diinput manual berkali-kali
+
+SOLUSI:
+- Semua data klien dalam satu sistem terpusat
+- Dashboard terpisah untuk setiap klien
+- Input data yang mudah dan terstruktur
+- Tracking performa iklan per platform
+- Laporan dan analisis yang lebih mudah
+
+================================================================================
+STRUKTUR PROJECT
+================================================================================
+
+Aplikasi/
+├── backend/          # Node.js + Express API
+│   ├── src/
+│   │   ├── config/   # Konfigurasi (env, db, cloudinary)
+│   │   ├── models/   # MongoDB models
+│   │   ├── routes/   # API routes
+│   │   ├── controllers/  # Controllers (1 FILE = 1 FUNCTION)
+│   │   ├── services/     # Business logic (1 FILE = 1 FUNCTION)
+│   │   ├── middleware/   # Middleware functions
+│   │   └── utils/        # Utility functions
+│   └── README.md
+│
+├── frontend/         # React frontend (to be developed)
+│   └── README.md
+│
+├── README.md              # Progress report
+├── APPLICATION_GUIDE.md   # Application overview & development guide
+└── Prompt aplikasi.txt    # File ini
+
+================================================================================
+PRINSIP PENGEMBANGAN (PENTING!)
+================================================================================
+
+1. BACKEND: 1 FILE = 1 FUNCTION
+   - Setiap controller function dalam file terpisah
+   - Setiap service function dalam file terpisah
+   - Contoh: 
+     * controllers/metrics/createDailyMetricController.js
+     * services/metrics/createDailyMetricService.js
+   - Ini untuk memudahkan debugging dan maintenance
+
+2. SEPARATION OF CONCERNS
+   - Routes: Hanya handle routing
+   - Controllers: Handle request/response
+   - Services: Handle business logic
+   - Models: Database schema
+
+3. MULTI-TENANT ARCHITECTURE
+   - Setiap data dikaitkan dengan clientId
+   - Setiap client hanya bisa akses data mereka sendiri
+   - SUPER_ADMIN bisa lihat semua
+   - ADMIN hanya lihat client yang di-assign ke mereka
+
+4. NO LOCAL STORAGE
+   - Semua file menggunakan Cloudinary (cloud storage)
+   - Database menggunakan MongoDB Atlas (cloud)
+   - Tidak ada penyimpanan lokal
+
+================================================================================
+ROLE & ACCESS CONTROL
+================================================================================
+
+SUPER_ADMIN:
+- Akses penuh ke semua data dan klien
+- Bisa buat admin baru
+- Bisa buat client user baru
+- Bisa buat klien baru
+
+ADMIN:
+- Hanya lihat klien yang di-assign ke mereka (managedClientIds)
+- Bisa input data untuk klien mereka
+- Tidak bisa lihat data klien lain
+
+CLIENT:
+- Hanya lihat data mereka sendiri (clientId)
+- Bisa input metrics dan topup untuk akun mereka
+- Tidak bisa lihat data klien lain
+
+================================================================================
+DATA MODEL UTAMA
+================================================================================
+
+User:
+- name, email, passwordHash
+- role: SUPER_ADMIN | ADMIN | CLIENT
+- clientId (untuk CLIENT)
+- managedClientIds (untuk ADMIN)
+
+Client:
+- name, companyName, contactEmail
+- status: ACTIVE | INACTIVE | SUSPENDED
+
+AdAccount:
+- clientId, platform, accountName, accountId, currency
+
+DailyMetric:
+- clientId, adAccountId, platform, date
+- spend, revenue, impressions, clicks, leads, notes
+- customFields (Mixed type) - untuk extensibility, bisa ditambah field baru seiring waktu
+  Contoh: { "pageView": 100, "formConversions": 5, "waConversions": 10, "ruteConversions": 20 }
+
+CustomMetricField (NEW - untuk manage custom fields):
+- clientId, platform (atau 'ALL' untuk semua platform)
+- fieldName, fieldLabel, fieldType (NUMBER, TEXT, PERCENTAGE, CURRENCY)
+- isRequired, defaultValue, displayOrder, isActive
+- createdBy
+
+Topup:
+- clientId, adAccountId, platform, date
+- amount, paymentMethod, receiptUrl, notes
+
+================================================================================
+API ENDPOINTS (Backend)
+================================================================================
+
+Auth:
+- POST /api/auth/login
+- GET /api/auth/me
+
+Users (SUPER_ADMIN only):
+- POST /api/users/admin
+- POST /api/users/client-user
+
+Clients:
+- POST /api/clients
+- GET /api/clients
+- GET /api/clients/:id
+
+Ad Accounts:
+- POST /api/ad-accounts
+- GET /api/ad-accounts
+
+Metrics:
+- POST /api/metrics/daily
+- GET /api/metrics/daily
+- GET /api/metrics/daily/:id
+- PUT /api/metrics/daily/:id
+- DELETE /api/metrics/daily/:id
+
+Custom Metric Fields (NEW - untuk extensibility):
+- POST /api/custom-metric-fields (create custom field definition)
+- GET /api/custom-metric-fields (list custom fields untuk client/platform)
+
+Topups:
+- POST /api/topups
+- GET /api/topups
+
+Dashboard:
+- GET /api/dashboard/super-admin
+- GET /api/dashboard/admin
+- GET /api/dashboard/client
+
+================================================================================
+TECH STACK
+================================================================================
+
+Backend:
+- Node.js + Express
+- MongoDB (MongoDB Atlas)
+- JWT Authentication
+- Cloudinary (file storage)
+- bcryptjs (password hashing)
+
+Frontend (Planned):
+- React
+- React Router
+- State Management (TBD)
+- UI Library dengan dark theme (hitam, modern, minimalis)
+- Chart Library (TBD)
+
+================================================================================
+DESIGN SYSTEM (Frontend)
+================================================================================
+
+Theme: Dark mode (hitam, modern, minimalis)
+- Dominan warna hitam
+- Aksen warna untuk highlight
+- Typography: Modern, clean, readable
+- Components: Minimalis, functional, user-friendly
+
+Pages:
+- Before login: Landing page
+- After login: Dashboard sesuai role
+- Separate dashboard untuk SUPER_ADMIN, ADMIN, dan CLIENT
+
+================================================================================
+STATUS PENGEMBANGAN
+================================================================================
+
+✅ COMPLETED:
+- Backend structure & setup
+- Database models
+- Authentication & authorization
+- All API endpoints
+- Middleware (auth, role, error handler)
+- Services & controllers (1 file = 1 function)
+- Custom Metric Fields system (untuk extensibility)
+
+🚧 IN PROGRESS:
+- Frontend development
+- Charts & visualization (mengikuti spreadsheet user)
+
+📋 TODO:
+- Setup React project
+- Implement authentication flow
+- Build dashboard pages
+- Implement CRUD operations
+- Add data visualization (bar chart, funnel graph, summary cards)
+- Custom fields UI untuk metrics input
+
+================================================================================
+CARA KERJA DENGAN PROJECT INI
+================================================================================
+
+1. BACA SEMUA DOKUMENTASI:
+   - README.md (progress)
+   - APPLICATION_GUIDE.md (overview & roadmap)
+   - README.md di backend/ dan frontend/
+
+2. PAHAMI STRUKTUR CODE:
+   - Backend menggunakan 1 file = 1 function
+   - Ikuti pola yang sudah ada
+   - Jangan ubah struktur tanpa alasan kuat
+
+3. TESTING:
+   - Test semua perubahan
+   - Pastikan tidak break existing functionality
+   - Test dengan berbagai role (SUPER_ADMIN, ADMIN, CLIENT)
+
+4. SECURITY:
+   - Selalu validasi input
+   - Check role & access control
+   - Jangan expose sensitive data
+
+5. DOCUMENTATION:
+   - Update dokumentasi jika menambah fitur baru
+   - Update API endpoints jika menambah route baru
+   - Update progress di README.md
+
+================================================================================
+CONTOH KODE (Backend Pattern)
+================================================================================
+
+Controller (1 file = 1 function):
+// controllers/metrics/createDailyMetricController.js
+const createDailyMetricService = require('../../services/metrics/createDailyMetricService');
+
+async function createDailyMetricController(req, res, next) {
+  try {
+    const { ... } = req.body;
+    const result = await createDailyMetricService({ ... });
+    return res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = createDailyMetricController;
+
+Service (1 file = 1 function):
+// services/metrics/createDailyMetricService.js
+const DailyMetric = require('../../models/DailyMetric');
+
+async function createDailyMetricService(metricData) {
+  try {
+    const metric = new DailyMetric(metricData);
+    await metric.save();
+    return metric;
+  } catch (error) {
+    throw error;
+  }
+}
+
+module.exports = createDailyMetricService;
+
+Route:
+// routes/metricsRoutes.js
+const createDailyMetricController = require('../controllers/metrics/createDailyMetricController');
+router.post('/daily', authMiddleware, createDailyMetricController);
+
+================================================================================
+ENVIRONMENT VARIABLES
+================================================================================
+
+Backend .env:
+PORT=4000
+MONGO_URI=mongodb+srv://...
+JWT_SECRET=...
+NODE_ENV=development
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+
+================================================================================
+CATATAN PENTING
+================================================================================
+
+1. JANGAN simpan file di lokal - semua pakai Cloudinary
+2. JANGAN hardcode credentials - pakai environment variables
+3. SELALU check role & access control sebelum akses data
+4. IKUTI pola 1 file = 1 function untuk controllers/services
+5. TEST dengan berbagai role sebelum commit
+6. file readme tidak boleh dirubah/dikurangi hanya boleh di tambah ceklist proggress atau tambahan informasi baru atau berikan komentar jika penjelasan di readme sudah tidak relevan, tidak boleh diubah maupun di hapus (PENTING)
+7. file prompt_aplikasi.txt ini juga tidak boleh dirubah/dikurangi isinya, berikan komentar saja jika isinya memang sudah tidak relevan
+
+8. CUSTOM FIELDS SYSTEM (PENTING):
+   - DailyMetric model sudah support customFields (Mixed type)
+   - Gunakan CustomMetricField model untuk manage field definitions
+   - Custom fields bisa ditambah per client dan per platform
+   - Field types: NUMBER, TEXT, PERCENTAGE, CURRENCY
+   - Ini memungkinkan extensibility tanpa perlu migrate database setiap kali butuh field baru
+   - Contoh custom fields dari spreadsheet user:
+     * pageView (NUMBER)
+     * formConversions (NUMBER)
+     * waConversions (NUMBER)
+     * ruteConversions (NUMBER)
+     * kontakConversions (NUMBER)
+     * ctr (PERCENTAGE)
+     * costPerConversion (CURRENCY)
+
+9. CHARTS & VISUALIZATION (mengikuti spreadsheet user):
+   - Bar chart untuk Sumber Impression (Google Ads, Meta Ads, TikTok Ads)
+   - Funnel Graph Simulation untuk prospect stages
+   - Summary cards: Total Biaya Marketing, Total Leads, Total Pelanggan, Omset, CAC, ROAS
+   - Total Impression Bulan ini
+   - Prospect stages dengan Biaya Per Lead, Biaya Per Closing
+
+================================================================================
+KONTAK & SUPPORT
+================================================================================
+
+Untuk pertanyaan atau kolaborasi, silakan baca dokumentasi lengkap di:
+- APPLICATION_GUIDE.md untuk overview lengkap
+- README.md untuk progress update
+- README.md di masing-masing folder untuk detail teknis
+
+================================================================================
+LAST UPDATED: December 2024
+VERSION: 1.0.0 (Backend Complete)
+================================================================================
+
