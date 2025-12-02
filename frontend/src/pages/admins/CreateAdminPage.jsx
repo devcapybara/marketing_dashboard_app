@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -17,6 +17,16 @@ const CreateAdminPage = () => {
   const [password, setPassword] = useState('');
   const [managedClientIds, setManagedClientIds] = useState([]);
   const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState('');
+
+  const filteredClients = useMemo(() => {
+    const q = clientSearch.toLowerCase();
+    return clients.filter((c) => {
+      const name = (c.name || '').toLowerCase();
+      const company = (c.companyName || '').toLowerCase();
+      return name.includes(q) || company.includes(q);
+    });
+  }, [clients, clientSearch]);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -110,17 +120,30 @@ const CreateAdminPage = () => {
                 <LoadingSpinner size="sm" /> Loading clients...
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {clients.map((c) => (
-                  <label key={c._id} className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={managedClientIds.includes(c._id)}
-                      onChange={() => toggleClient(c._id)}
-                    />
-                    <span>{c.name} {c.companyName ? `- ${c.companyName}` : ''}</span>
-                  </label>
-                ))}
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Cari klien..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="input"
+                />
+                <select
+                  multiple
+                  value={managedClientIds}
+                  onChange={(e) => {
+                    const options = Array.from(e.target.selectedOptions);
+                    const ids = options.map((opt) => opt.value);
+                    setManagedClientIds(ids);
+                  }}
+                  className="input h-40"
+                >
+                  {filteredClients.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name} {c.companyName ? `- ${c.companyName}` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
           </div>
@@ -140,3 +163,4 @@ const CreateAdminPage = () => {
 };
 
 export default CreateAdminPage;
+// removed trailing filteredClients declaration outside component

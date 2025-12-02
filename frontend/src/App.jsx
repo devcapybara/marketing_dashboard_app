@@ -27,6 +27,7 @@ import EditTopupPage from './pages/topups/EditTopupPage';
 import CustomFieldsPage from './pages/custom-fields/CustomFieldsPage';
 import AdminsPage from './pages/admins/AdminsPage';
 import CreateAdminPage from './pages/admins/CreateAdminPage';
+import AdminDetailPage from './pages/admins/AdminDetailPage';
 
 function App() {
   return (
@@ -219,6 +220,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
                 <CreateAdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admins/:id"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <AdminDetailPage />
               </ProtectedRoute>
             }
           />
