@@ -132,30 +132,46 @@ const SuperAdminDashboard = () => {
         {summary?.platformMetrics && summary.platformMetrics.length > 0 && (
           <div className="card mb-8">
             <h2 className="text-xl font-semibold mb-4">Per Platform</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {summary.platformMetrics.map((platform) => (
-                <div key={platform._id} className="bg-dark-surface p-4 rounded-lg border border-dark-border">
-                  <h3 className="font-semibold mb-2">{platform._id}</h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-dark-text-muted">Spend:</span>
-                      <span className="font-medium">{formatCurrency(platform.spend || 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-dark-text-muted">Revenue:</span>
-                      <span className="font-medium">{formatCurrency(platform.revenue || 0)}</span>
-                    </div>
-                    {platform.spend > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-dark-text-muted">ROAS:</span>
-                        <span className="font-medium">
-                          {(platform.revenue / platform.spend).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+              {/* Shortcut cards */}
+              <button
+                className="card hover:bg-dark-surface transition"
+                onClick={() => navigate('/clients')}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">👥</span>
+                  <div>
+                    <div className="font-semibold">Manage Clients</div>
+                    <div className="text-dark-text-muted text-sm">Kelola data klien</div>
                   </div>
                 </div>
-              ))}
+              </button>
+              
+              <button
+                className="card hover:bg-dark-surface transition"
+                onClick={() => navigate('/ad-accounts')}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📱</span>
+                  <div>
+                    <div className="font-semibold">Manage Ad Accounts</div>
+                    <div className="text-dark-text-muted text-sm">Kelola akun iklan</div>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                className="card hover:bg-dark-surface transition"
+                onClick={() => navigate('/admins')}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🛠️</span>
+                  <div>
+                    <div className="font-semibold">Manage Administrators</div>
+                    <div className="text-dark-text-muted text-sm">Tambah & kelola admin</div>
+                  </div>
+                </div>
+              </button>
             </div>
           </div>
         )}

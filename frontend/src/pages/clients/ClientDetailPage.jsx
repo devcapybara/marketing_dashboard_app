@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { clientService } from '../../services/clientService';
 import { useAuth } from '../../context/AuthContext';
+import { listAdmins, assignClientToAdmin, unassignClientFromAdmin } from '../../services/userService';
 
 const ClientDetailPage = () => {
   const { id } = useParams();
@@ -12,10 +13,21 @@ const ClientDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [client, setClient] = useState(null);
+  const [admins, setAdmins] = useState([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [adminsError, setAdminsError] = useState(null);
+  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     fetchClient();
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN') {
+      fetchAdmins();
+    }
+  }, [user, id]);
 
   const fetchClient = async () => {
     try {
@@ -28,6 +40,20 @@ const ClientDetailPage = () => {
       setError(err.response?.data?.message || 'Failed to load client');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdmins = async () => {
+    try {
+      setAdminsLoading(true);
+      setAdminsError(null);
+      const res = await listAdmins();
+      setAdmins(res.data || []);
+    } catch (err) {
+      console.error('Error fetching admins:', err);
+      setAdminsError(err.response?.data?.message || 'Failed to load admins');
+    } finally {
+      setAdminsLoading(false);
     }
   };
 
@@ -44,8 +70,36 @@ const ClientDetailPage = () => {
     }
   };
 
+  const handleAssign = async () => {
+    if (!selectedAdminId) return;
+    try {
+      setAssigning(true);
+      await assignClientToAdmin(selectedAdminId, id);
+      await fetchAdmins();
+      setSelectedAdminId('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to assign admin');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleUnassign = async (adminId) => {
+    if (!window.confirm('Unassign admin dari klien ini?')) return;
+    try {
+      setAssigning(true);
+      await unassignClientFromAdmin(adminId, id);
+      await fetchAdmins();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to unassign admin');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const canEdit = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
   const canDelete = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+  const canManageAdmins = user?.role === 'SUPER_ADMIN';
 
   if (loading) {
     return (
@@ -93,6 +147,10 @@ const ClientDetailPage = () => {
       </span>
     );
   };
+
+  const assignedAdmins = admins.filter((admin) =>
+    (admin.managedClientIds || []).some((mc) => (mc?._id || mc)?.toString() === id.toString())
+  );
 
   return (
     <DashboardLayout>
@@ -179,6 +237,74 @@ const ClientDetailPage = () => {
             </div>
           </div>
         </div>
+
+        {canManageAdmins && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Assign Admin ke Klien</h2>
+              {adminsLoading ? (
+                <div className="flex items-center justify-center min-h-[120px]">
+                  <LoadingSpinner />
+                </div>
+              ) : adminsError ? (
+                <p className="text-red-400">{adminsError}</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Pilih Admin</label>
+                    <select
+                      value={selectedAdminId}
+                      onChange={(e) => setSelectedAdminId(e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="">-- Pilih Admin --</option>
+                      {admins.map((admin) => (
+                        <option key={admin._id} value={admin._id}>
+                          {admin.name || admin.email} {admin.isActive === false ? '(inactive)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    disabled={!selectedAdminId || assigning}
+                    onClick={handleAssign}
+                    className={`btn-primary ${assigning ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    {assigning ? 'Assigning...' : 'Assign Admin'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Admin yang Mengelola Klien Ini</h2>
+              {adminsLoading ? (
+                <div className="flex items-center justify-center min-h-[120px]">
+                  <LoadingSpinner />
+                </div>
+              ) : assignedAdmins.length > 0 ? (
+                <ul className="space-y-2">
+                  {assignedAdmins.map((admin) => (
+                    <li key={admin._id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{admin.name || admin.email}</p>
+                        <p className="text-sm text-dark-text-muted">Last login: {admin.lastLoginAt ? new Date(admin.lastLoginAt).toLocaleString('id-ID') : '-'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleUnassign(admin._id)}
+                        className="btn-secondary text-red-400 border-red-400 hover:bg-red-500/20"
+                      >
+                        Unassign
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-dark-text-muted">Belum ada admin yang mengelola klien ini.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -23,6 +23,15 @@ const Sidebar = () => {
       },
     ];
 
+    // Tambah menu Admins khusus SUPER_ADMIN
+    if (user?.role === 'SUPER_ADMIN') {
+      baseMenu.push({
+        name: 'Admins',
+        path: '/admins',
+        icon: '🛠️',
+      });
+    }
+
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
       baseMenu.push(
         {

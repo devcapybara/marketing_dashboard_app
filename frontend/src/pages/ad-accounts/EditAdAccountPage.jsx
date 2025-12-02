@@ -3,10 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { adAccountService } from '../../services/adAccountService';
+import { clientService } from '../../services/clientService';
+import { useAuth } from '../../context/AuthContext';
 
 const EditAdAccountPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -16,11 +19,20 @@ const EditAdAccountPage = () => {
     accountId: '',
     currency: 'IDR',
     isActive: true,
+    clientId: '',
   });
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(false);
 
   useEffect(() => {
     fetchAdAccount();
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
+      fetchClients();
+    }
+  }, [user]);
 
   const fetchAdAccount = async () => {
     try {
@@ -34,12 +46,25 @@ const EditAdAccountPage = () => {
         accountId: account.accountId || '',
         currency: account.currency || 'IDR',
         isActive: account.isActive !== undefined ? account.isActive : true,
+        clientId: account.clientId?._id || account.clientId || '',
       });
     } catch (err) {
       console.error('Error fetching ad account:', err);
       setError(err.response?.data?.message || 'Failed to load ad account');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      setLoadingClients(true);
+      const response = await clientService.listClients();
+      setClients(response.data || []);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+    } finally {
+      setLoadingClients(false);
     }
   };
 
@@ -95,6 +120,33 @@ const EditAdAccountPage = () => {
           {error && (
             <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg">
               {error}
+            </div>
+          )}
+
+          {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+            <div>
+              <label htmlFor="clientId" className="block text-sm font-medium mb-2">
+                Client <span className="text-red-400">*</span>
+              </label>
+              {loadingClients ? (
+                <LoadingSpinner />
+              ) : (
+                <select
+                  id="clientId"
+                  name="clientId"
+                  value={formData.clientId}
+                  onChange={handleChange}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">Select Client</option>
+                  {clients.map((client) => (
+                    <option key={client._id} value={client._id}>
+                      {client.name} {client.companyName && `(${client.companyName})`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 

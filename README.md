@@ -224,14 +224,6 @@
 - [x] Edit topup page ✅
 - [x] Delete topup functionality ✅
 
-### 7. UI Components ✅
-- [x] Navigation/Sidebar ✅
-- [x] Data tables ✅
-- [x] Forms ✅
-- [x] Charts/Graphs (Recharts) ✅
-- [x] Modals ✅
-- [ ] Notifications (future)
-
 ---
 
 ## 🔄 Next Steps
@@ -313,4 +305,19 @@ Aplikasi/
 - Semua file storage menggunakan Cloudinary (tidak ada storage lokal)
 - Database menggunakan MongoDB Atlas (cloud)
 - Multi-tenant architecture: setiap client hanya bisa akses data mereka sendiri
+
+## 🧑‍💼 Admin Management (SUPER_ADMIN)
+
+Fitur manajemen Administrator tersedia untuk SUPER_ADMIN di frontend dan backend:
+
+- Frontend:
+  - Sidebar menambahkan menu "Admins" untuk SUPER_ADMIN
+  - Halaman `/admins` untuk melihat daftar admin (name, email, role, managed clients, status)
+  - Halaman `/admins/create` untuk membuat admin baru (name, email, password) + opsi assign managed clients
+- Backend:
+  - `POST /api/users/admin` - Membuat Admin baru
+  - `GET /api/users/admins` - List Admin
+  - `POST /api/users/admin/:adminId/assign-client/:clientId` - Assign client ke admin
+  - `POST /api/users/admin/:adminId/unassign-client/:clientId` - Unassign client dari admin
+- RBAC: Seluruh endpoint Users dilindungi oleh autentikasi dan hanya SUPER_ADMIN yang memiliki akses
 

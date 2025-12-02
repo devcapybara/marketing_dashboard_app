@@ -114,10 +114,6 @@ Lihat dokumentasi lengkap di `../backend/README.md` untuk detail API endpoints.
 
 ## 📊 Pages Status
 
-### Before Login ✅
-- [x] Landing page (hero section, features)
-- [x] Login page
-
 ### After Login (per role) ✅
 - [x] Super Admin Dashboard (skeleton)
 - [x] Admin Dashboard (skeleton)
@@ -150,3 +146,24 @@ Lihat dokumentasi lengkap di `../backend/README.md` untuk detail API endpoints.
 
 **Last Updated:** December 2024  
 **Status:** Frontend Foundation Complete
+
+## 🧑‍💼 Admin Management (SUPER_ADMIN)
+
+Halaman baru untuk mengelola Administrator telah ditambahkan dan hanya dapat diakses oleh role SUPER_ADMIN:
+
+- Navigasi: Sidebar menampilkan item "Admins" untuk SUPER_ADMIN
+- Routes:
+  - `/admins` - Menampilkan daftar Administrator (name, email, role, managed clients, status)
+  - `/admins/create` - Form untuk membuat Admin baru (name, email, password) dengan opsi assign managed clients
+- Layanan API frontend: `userService.js`
+  - `listAdmins()` - Mengambil daftar admin dari `GET /api/users/admins`
+  - `assignClientToAdmin(adminId, clientId)` - Assign client ke admin
+  - `unassignClientFromAdmin(adminId, clientId)` - Unassign client dari admin
+- RBAC: Hanya SUPER_ADMIN yang dapat membuka halaman, tombol "Create Admin" hanya tampil untuk SUPER_ADMIN
+
+## 🔗 Backend API (Admin Management)
+
+- `POST /api/users/admin` - Membuat Admin baru (name, email, password, optional managedClientIds)
+- `GET /api/users/admins` - Mengambil daftar Admin
+- `POST /api/users/admin/:adminId/assign-client/:clientId` - Assign client ke admin
+- `POST /api/users/admin/:adminId/unassign-client/:clientId` - Unassign client dari admin

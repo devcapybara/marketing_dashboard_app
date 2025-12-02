@@ -52,6 +52,11 @@ Server akan berjalan di `http://localhost:4000`
 ### Users (SUPER_ADMIN only)
 - `POST /api/users/admin` - Create admin user
 - `POST /api/users/client-user` - Create client user
+- `GET /api/users/admins` - List admin users
+- `POST /api/users/admin/:adminId/assign-client/:clientId` - Assign client to admin
+- `POST /api/users/admin/:adminId/unassign-client/:clientId` - Unassign client from admin
+
+Semua endpoint di bagian Users dilindungi oleh autentikasi dan hanya dapat diakses oleh pengguna dengan role SUPER_ADMIN.
 
 ### Clients
 - `POST /api/clients` - Create client (SUPER_ADMIN, ADMIN)

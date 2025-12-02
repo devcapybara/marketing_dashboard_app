@@ -25,6 +25,8 @@ import CreateTopupPage from './pages/topups/CreateTopupPage';
 import TopupDetailPage from './pages/topups/TopupDetailPage';
 import EditTopupPage from './pages/topups/EditTopupPage';
 import CustomFieldsPage from './pages/custom-fields/CustomFieldsPage';
+import AdminsPage from './pages/admins/AdminsPage';
+import CreateAdminPage from './pages/admins/CreateAdminPage';
 
 function App() {
   return (
@@ -199,6 +201,24 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'CLIENT']}>
                 <CustomFieldsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Management pages (SUPER_ADMIN only) */}
+          <Route
+            path="/admins"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <AdminsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admins/create"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <CreateAdminPage />
               </ProtectedRoute>
             }
           />
