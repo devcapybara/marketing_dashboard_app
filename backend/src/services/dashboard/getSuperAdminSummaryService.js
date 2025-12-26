@@ -132,6 +132,7 @@ async function getSuperAdminSummaryService(filters = {}) {
     const totalVat = spendByAccount.reduce((sum, s) => sum + s.spend * ((vatMap.get(s._id?.toString()) ?? 11) / 100), 0);
     const totalSpendWithVat = metrics.totalSpend + totalVat;
     const effectiveBalance = totalTopup - totalSpendWithVat;
+    const cpl = (totalLeadsCount > 0) ? (totalSpendWithVat / totalLeadsCount) : 0;
 
     return {
       totalClients,
@@ -144,6 +145,7 @@ async function getSuperAdminSummaryService(filters = {}) {
       effectiveBalance: parseFloat(effectiveBalance.toFixed(2)),
       roas: parseFloat(roas.toFixed(2)),
       cac: parseFloat(cac.toFixed(2)),
+      cpl: parseFloat(cpl.toFixed(2)),
       totalImpressions: metrics.totalImpressions,
       totalClicks: metrics.totalClicks,
       totalLeads: totalLeadsCount,

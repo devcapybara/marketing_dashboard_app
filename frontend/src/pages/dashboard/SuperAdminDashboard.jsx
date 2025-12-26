@@ -94,6 +94,7 @@ const SuperAdminDashboard = () => {
           <SummaryCard title="Total Impressions" value={formatNumber(summary?.totalImpressions || 0)} icon="👁️" />
           <SummaryCard title="Total Clicks" value={formatNumber(summary?.totalClicks || 0)} icon="🖱️" />
           <SummaryCard title="Total Leads" value={formatNumber(summary?.totalLeads || 0)} icon="📋" />
+          <SummaryCard title="Cost per Lead" value={formatCurrency(summary?.cpl || 0)} icon="💡" />
           <SummaryCard title="Closing" value={formatNumber(summary?.chartData?.funnel?.closing || 0)} icon="✅" />
           <SummaryCard title="CAC" value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)} subtitle="Customer Acquisition Cost" icon="💵" />
           <SummaryCard title="ROAS" value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'} subtitle="Return on Ad Spend" icon="📊" />
