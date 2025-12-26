@@ -235,7 +235,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Leads Management */}
           <Route
             path="/leads"
