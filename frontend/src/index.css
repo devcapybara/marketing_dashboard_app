@@ -34,6 +34,30 @@
   .input {
     @apply bg-dark-surface border border-dark-border text-dark-text rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
   }
+  .table-compact {
+    font-size: 10px;
+  }
+  .table-compact th, .table-compact td {
+    padding: 4px 6px;
+  }
+  .table-compact .input {
+    @apply px-2 py-1;
+    height: 24px;
+  }
+  .table-sticky thead th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: theme('colors.dark.card');
+  }
+  .no-x-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-x-scrollbar::-webkit-scrollbar {
+    height: 0px;
+    width: 0px;
+    display: none;
+  }
 }
 
 .gradient-hero {

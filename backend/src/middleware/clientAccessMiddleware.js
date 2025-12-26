@@ -1,6 +1,9 @@
 async function clientAccessMiddleware(req, res, next) {
   try {
     const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
     const requestedClientId = req.params.clientId || req.query.clientId || req.body.clientId;
 
     // SUPER_ADMIN can access all clients
