@@ -124,7 +124,7 @@ const LeadsPage = () => {
         <div className="grid grid-cols-1 gap-4">
           <div ref={cardRef} className="card min-h-[70vh] overflow-hidden">
             <div ref={scrollRef} className="overflow-x-auto no-x-scrollbar">
-              <table className="table-auto table-compact table-sticky min-w-[1600px]">
+              <table className="table-auto table-compact min-w-[1600px]">
                 <thead>
                   <tr className="text-left">
                     <th className="px-4 py-2 w-[80px]">No.</th>
@@ -145,7 +145,7 @@ const LeadsPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-t border-dark-border bg-dark-card sticky top-6 z-10">
+                  <tr className="border-t border-dark-border bg-dark-card">
                     <td className="px-4 py-2 w-[80px] text-center">{(total || 0) + 1}</td>
                     <td className="px-4 py-2"><input className="input" value={newLead.name} onChange={(e)=>setNewLead({...newLead,name:e.target.value})} placeholder="Nama" /></td>
                     <td className="px-4 py-2"><input className="input" value={newLead.phone} onChange={(e)=>setNewLead({...newLead,phone:e.target.value})} placeholder="HP" /></td>
