@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { leadService } from '../../services/leadService';
@@ -13,6 +14,7 @@ const DEFAULT_SOURCE = ['Google Ads','TikTok Ads','Facebook','Instagram','Teman'
 
 const LeadsPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [leads, setLeads] = useState([]);
@@ -141,7 +143,6 @@ const LeadsPage = () => {
                     <th className="px-4 py-2">FU3</th>
                     <th className="px-4 py-2">FU4</th>
                     <th className="px-4 py-2">FU5</th>
-                    <th className="px-4 py-2">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,100 +239,25 @@ const LeadsPage = () => {
                   </tr>
                   {leads.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-6 text-center text-dark-text-muted" colSpan={13}>Belum ada leads</td>
+                      <td className="px-4 py-6 text-center text-dark-text-muted" colSpan={14}>Belum ada leads</td>
                     </tr>
                   ) : (
                     leads.map((l, i) => (
-                      <tr key={l._id} className="border-t border-dark-border bg-dark-surface/60">
+                      <tr key={l._id} className="border-t border-dark-border bg-dark-surface/60 cursor-pointer hover:bg-dark-card" onClick={()=>navigate(`/leads/${l._id}`)}>
                         <td className="px-4 py-2 w-[80px] text-center">{l.counter ?? ((page - 1) * LIMIT + i + 1)}</td>
-                        <td className="px-4 py-2"><input className="input w-full" defaultValue={l.name || ''} onBlur={(e)=>updateLeadField(l._id,'name',e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className="input w-full" defaultValue={l.phone || ''} onBlur={(e)=>updateLeadField(l._id,'phone',e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className="input w-full" defaultValue={l.username || ''} onBlur={(e)=>updateLeadField(l._id,'username',e.target.value)} /></td>
-                        <td className="px-4 py-2 min-w-[160px] w-[200px]">
-                          <DropdownEditor
-                            kind="CS PIC"
-                            options={csPicOptions}
-                            value={l.csPic || ''}
-                            onChange={(v)=>updateLeadField(l._id,'csPic',v)}
-                            canDelete={(label)=>!!label}
-                            onCreate={async (label)=>{
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = [...csPicOptions, label];
-                              setClientDetail((prev)=> ({...prev, csPicOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { csPicOptions: next });
-                              await updateLeadField(l._id,'csPic',label);
-                            }}
-                            onDelete={async (label)=>{
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = csPicOptions.filter((o)=>o!==label);
-                              setClientDetail((prev)=> ({...prev, csPicOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { csPicOptions: next });
-                              if (l.csPic===label) await updateLeadField(l._id,'csPic','');
-                            }}
-                            placeholder="-"
-                            menuClass="w-[200px]"
-                          />
-                        </td>
-                        <td className="px-4 py-2 min-w-[160px] w-[200px]">
-                          <DropdownEditor
-                            kind="Sumber"
-                            options={sourceOptions}
-                            value={l.source || ''}
-                            onChange={(v)=>updateLeadField(l._id,'source',v)}
-                            canDelete={(label)=>label && !DEFAULT_SOURCE.includes(label)}
-                            onCreate={async (label)=>{
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = [...sourceOptions, label];
-                              setClientDetail((prev)=> ({...prev, leadSourceOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { leadSourceOptions: next });
-                              await updateLeadField(l._id,'source',label);
-                            }}
-                            onDelete={async (label)=>{
-                              if (DEFAULT_SOURCE.includes(label)) return;
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = sourceOptions.filter((o)=>o!==label);
-                              setClientDetail((prev)=> ({...prev, leadSourceOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { leadSourceOptions: next });
-                              if (l.source===label) await updateLeadField(l._id,'source',sourceOptions[0] || '');
-                            }}
-                            placeholder="-"
-                            menuClass="w-[200px]"
-                          />
-                        </td>
-                        <td className="px-4 py-2"><input className="input" defaultValue={l.address || ''} onBlur={(e)=>updateLeadField(l._id,'address',e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className="input" defaultValue={l.notes || ''} onBlur={(e)=>updateLeadField(l._id,'notes',e.target.value)} /></td>
-                        <td className="px-4 py-2 min-w-[160px] w-[200px]">
-                          <DropdownEditor
-                            kind="Status"
-                            options={statusOptions}
-                            value={l.status || ''}
-                            onChange={(v)=>updateLeadField(l._id,'status',v)}
-                            canDelete={(label)=>label && !DEFAULT_STATUS.includes(label)}
-                            onCreate={async (label)=>{
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = [...statusOptions, label];
-                              setClientDetail((prev)=> ({...prev, leadStatusOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { leadStatusOptions: next });
-                              await updateLeadField(l._id,'status',label);
-                            }}
-                            onDelete={async (label)=>{
-                              if (DEFAULT_STATUS.includes(label)) return;
-                              const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
-                              const next = statusOptions.filter((o)=>o!==label);
-                              setClientDetail((prev)=> ({...prev, leadStatusOptions: next }));
-                              await api.put(`/api/clients/${activeClientId}/lead-settings`, { leadStatusOptions: next });
-                              if (l.status===label) await updateLeadField(l._id,'status',statusOptions[0] || '');
-                            }}
-                            placeholder="-"
-                            menuClass="w-[200px]"
-                          />
-                        </td>
+                        <td className="px-4 py-2">{l.name || '-'}</td>
+                        <td className="px-4 py-2">{l.phone || '-'}</td>
+                        <td className="px-4 py-2">{l.username || '-'}</td>
+                        <td className="px-4 py-2">{l.csPic || '-'}</td>
+                        <td className="px-4 py-2">{l.source || '-'}</td>
+                        <td className="px-4 py-2">{l.address || '-'}</td>
+                        <td className="px-4 py-2">{l.notes || '-'}</td>
+                        <td className="px-4 py-2">{l.status || '-'}</td>
                         {[1,2,3,4,5].map((n) => (
                           <td key={n} className="px-2 py-2 w-[120px] min-w-[120px]">
-                            <input type="date" className="input w-full" value={(l[`followUp${n}`] || '').slice ? (l[`followUp${n}`] || '').slice(0,10) : ''} onChange={(e) => updateLeadField(l._id, `followUp${n}`, e.target.value)} />
+                            {(l[`followUp${n}`] || '').slice ? (l[`followUp${n}`] || '').slice(0,10) : ''}
                           </td>
                         ))}
-                        <td className="px-4 py-2 w-[120px]"><button className="btn-primary" onClick={()=>refreshLeads()}>Update</button></td>
                       </tr>
                     ))
                   )}
