@@ -2,7 +2,7 @@ const AdAccount = require('../../models/AdAccount');
 
 async function updateAdAccountService(adAccountId, adAccountData) {
   try {
-    const { platform, accountName, accountId, currency, isActive, clientId } = adAccountData;
+    const { platform, accountName, accountId, currency, isActive, clientId, vatPercent } = adAccountData;
 
     const adAccount = await AdAccount.findById(adAccountId);
 
@@ -15,6 +15,7 @@ async function updateAdAccountService(adAccountId, adAccountData) {
     if (accountId) adAccount.accountId = accountId;
     if (currency) adAccount.currency = currency;
     if (isActive !== undefined) adAccount.isActive = isActive;
+    if (vatPercent !== undefined) adAccount.vatPercent = vatPercent;
     if (clientId) adAccount.clientId = clientId; // support client reassignment
 
     await adAccount.save();

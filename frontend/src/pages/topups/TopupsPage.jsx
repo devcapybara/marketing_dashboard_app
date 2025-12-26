@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { topupService } from '../../services/topupService';
+import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { clientService } from '../../services/clientService';
 import { adAccountService } from '../../services/adAccountService';
 import { useAuth } from '../../context/AuthContext';
@@ -20,19 +21,27 @@ const TopupsPage = () => {
     dateFrom: '',
     dateTo: '',
   });
+  const [filterDraft, setFilterDraft] = useState({ clientId:'', adAccountId:'', platform:'', dateFrom:'', dateTo:'' });
+  const [appliedFilters, setAppliedFilters] = useState({ clientId:'', adAccountId:'', platform:'', dateFrom:'', dateTo:'' });
+  const [page, setPage] = useState(1);
+  const LIMIT = 25;
+  const [total, setTotal] = useState(0);
+  const scrollRef = useRef(null);
+  const cardRef = useRef(null);
+  const [newTopup, setNewTopup] = useState({ date:'', platform:'', adAccountId:'', amount:'', paymentMethod:'BANK_TRANSFER', receiptUrl:'', notes:'' });
   const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [appliedFilters, page]);
 
   useEffect(() => {
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
       fetchClients();
     }
     fetchAdAccounts();
-  }, [user, filters.clientId]);
+  }, [user, filterDraft.clientId]);
 
   const fetchData = async () => {
     try {
@@ -40,14 +49,15 @@ const TopupsPage = () => {
       setError(null);
 
       const filterParams = {};
-      if (filters.clientId) filterParams.clientId = filters.clientId;
-      if (filters.adAccountId) filterParams.adAccountId = filters.adAccountId;
-      if (filters.platform) filterParams.platform = filters.platform;
-      if (filters.dateFrom) filterParams.dateFrom = filters.dateFrom;
-      if (filters.dateTo) filterParams.dateTo = filters.dateTo;
+      if (appliedFilters.clientId) filterParams.clientId = appliedFilters.clientId;
+      if (appliedFilters.adAccountId) filterParams.adAccountId = appliedFilters.adAccountId;
+      if (appliedFilters.platform) filterParams.platform = appliedFilters.platform;
+      if (appliedFilters.dateFrom) filterParams.dateFrom = appliedFilters.dateFrom;
+      if (appliedFilters.dateTo) filterParams.dateTo = appliedFilters.dateTo;
 
-      const response = await topupService.listTopups(filterParams);
+      const response = await topupService.listTopups({ ...filterParams, page, limit: LIMIT });
       setTopups(response.data || []);
+      setTotal(response.meta?.total || (response.data?.length || 0));
     } catch (err) {
       console.error('Error fetching topups:', err);
       setError(err.response?.data?.message || 'Failed to load topups');
@@ -68,7 +78,7 @@ const TopupsPage = () => {
   const fetchAdAccounts = async () => {
     try {
       const filterParams = {};
-      if (filters.clientId) filterParams.clientId = filters.clientId;
+      if (filterDraft.clientId) filterParams.clientId = filterDraft.clientId;
       
       const response = await adAccountService.listAdAccounts(filterParams);
       setAdAccounts(response.data || []);
@@ -154,26 +164,19 @@ const TopupsPage = () => {
             <h1 className="text-3xl font-bold mb-2">Topups</h1>
             <p className="text-dark-text-muted">Kelola data top-up akun iklan</p>
           </div>
-          {canCreate && (
-            <button
-              onClick={() => navigate('/topups/create')}
-              className="btn-primary"
-            >
-              + Input Topup
-            </button>
-          )}
+          
         </div>
 
         {/* Filters */}
         <div className="card mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && clients.length > 0 && (
               <div>
                 <label className="block text-sm font-medium mb-2">Client</label>
                 <select
-                  value={filters.clientId}
+                  value={filterDraft.clientId}
                   onChange={(e) => {
-                    setFilters({ ...filters, clientId: e.target.value, adAccountId: '' });
+                    setFilterDraft({ ...filterDraft, clientId: e.target.value, adAccountId: '' });
                   }}
                   className="input w-full"
                 >
@@ -189,8 +192,8 @@ const TopupsPage = () => {
             <div>
               <label className="block text-sm font-medium mb-2">Ad Account</label>
               <select
-                value={filters.adAccountId}
-                onChange={(e) => setFilters({ ...filters, adAccountId: e.target.value })}
+                value={filterDraft.adAccountId}
+                onChange={(e) => setFilterDraft({ ...filterDraft, adAccountId: e.target.value })}
                 className="input w-full"
               >
                 <option value="">All Ad Accounts</option>
@@ -204,8 +207,8 @@ const TopupsPage = () => {
             <div>
               <label className="block text-sm font-medium mb-2">Platform</label>
               <select
-                value={filters.platform}
-                onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
+                value={filterDraft.platform}
+                onChange={(e) => setFilterDraft({ ...filterDraft, platform: e.target.value })}
                 className="input w-full"
               >
                 <option value="">All Platforms</option>
@@ -221,8 +224,8 @@ const TopupsPage = () => {
               <label className="block text-sm font-medium mb-2">Date From</label>
               <input
                 type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                value={filterDraft.dateFrom}
+                onChange={(e) => setFilterDraft({ ...filterDraft, dateFrom: e.target.value })}
                 className="input w-full"
               />
             </div>
@@ -230,10 +233,13 @@ const TopupsPage = () => {
               <label className="block text-sm font-medium mb-2">Date To</label>
               <input
                 type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                value={filterDraft.dateTo}
+                onChange={(e) => setFilterDraft({ ...filterDraft, dateTo: e.target.value })}
                 className="input w-full"
               />
+            </div>
+            <div className="flex justify-end lg:col-span-1">
+              <button className="btn-secondary" onClick={()=>{ setAppliedFilters(filterDraft); setPage(1); }}>Apply Filters</button>
             </div>
           </div>
         </div>
@@ -247,44 +253,98 @@ const TopupsPage = () => {
 
         {/* Topups Table */}
         {topups.length > 0 ? (
-          <div className="card overflow-x-auto">
-            <table className="w-full">
+          <div ref={cardRef} className="card overflow-hidden">
+            <div ref={scrollRef} className="overflow-auto h-[70vh] no-x-scrollbar">
+            <table className="table-auto table-compact min-w-[1400px]">
               <thead>
                 <tr className="border-b border-dark-border">
-                  <th className="text-left p-4 font-semibold">Date</th>
-                  <th className="text-left p-4 font-semibold">Platform</th>
-                  <th className="text-left p-4 font-semibold">Ad Account</th>
+                  <th className="text-center p-2">No.</th>
+                  <th className="text-center p-4 font-semibold">Date</th>
+                  <th className="text-center p-4 font-semibold">Platform</th>
+                  <th className="text-center p-4 font-semibold">Ad Account</th>
                   {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
-                    <th className="text-left p-4 font-semibold">Client</th>
+                    <th className="text-center p-4 font-semibold">Client</th>
                   )}
-                  <th className="text-right p-4 font-semibold">Amount</th>
-                  <th className="text-left p-4 font-semibold">Payment Method</th>
-                  <th className="text-left p-4 font-semibold">Receipt</th>
-                  <th className="text-right p-4 font-semibold">Actions</th>
+                  <th className="text-center p-4 font-semibold">Amount</th>
+                  <th className="text-center p-4 font-semibold">Payment Method</th>
+                  <th className="text-center p-4 font-semibold">Receipt</th>
+                  <th className="text-center p-4 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {topups.map((topup) => (
+                <tr className="border-t border-dark-border bg-dark-card">
+                  <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + topups.length + 1}</td>
+                  <td className="p-2"><input type="date" className="input w-full" value={newTopup.date} onChange={(e)=>setNewTopup((t)=>({...t,date:e.target.value}))} /></td>
+                  <td className="p-2">
+                    <select className="input w-full" value={newTopup.platform} onChange={(e)=>setNewTopup((t)=>({...t,platform:e.target.value}))}>
+                      <option value="">Pilih</option>
+                      <option value="META">Meta</option>
+                      <option value="TIKTOK">TikTok</option>
+                      <option value="GOOGLE">Google</option>
+                      <option value="X">X</option>
+                      <option value="LINKEDIN">LinkedIn</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </td>
+                  <td className="p-2">
+                    <select className="input w-full" value={newTopup.adAccountId} onChange={(e)=>setNewTopup((t)=>({...t,adAccountId:e.target.value}))}>
+                      <option value="">Pilih</option>
+                      {adAccounts.map((a)=>(<option key={a._id} value={a._id}>{a.accountName}</option>))}
+                    </select>
+                  </td>
+                  {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                    <td className="p-2 text-dark-text-muted">{clients.find(c=>c._id===appliedFilters.clientId)?.name || '-'}</td>
+                  )}
+                  <td className="p-2"><input type="number" className="input w-full" value={newTopup.amount} onChange={(e)=>setNewTopup((t)=>({...t,amount:e.target.value}))} placeholder="0" /></td>
+                  <td className="p-2">
+                    <select className="input w-full" value={newTopup.paymentMethod} onChange={(e)=>setNewTopup((t)=>({...t,paymentMethod:e.target.value}))}>
+                      <option value="BANK_TRANSFER">Bank Transfer</option>
+                      <option value="CREDIT_CARD">Credit Card</option>
+                      <option value="E_WALLET">E-Wallet</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </td>
+                  <td className="p-2"><input className="input w-full" value={newTopup.receiptUrl} onChange={(e)=>setNewTopup((t)=>({...t,receiptUrl:e.target.value}))} placeholder="https://..." /></td>
+                  <td className="p-2">
+                    <button className="btn-primary" onClick={async()=>{
+                      const payload = {
+                        clientId: appliedFilters.clientId || user?.clientId,
+                        adAccountId: newTopup.adAccountId,
+                        platform: newTopup.platform,
+                        date: newTopup.date,
+                        amount: Number(newTopup.amount||0),
+                        paymentMethod: newTopup.paymentMethod,
+                        notes: newTopup.notes || '',
+                        receiptUrl: newTopup.receiptUrl || '',
+                      };
+                      await topupService.createTopup(payload);
+                      setNewTopup({ date:'', platform:'', adAccountId:'', amount:'', paymentMethod:'BANK_TRANSFER', receiptUrl:'', notes:'' });
+                      fetchData();
+                    }}>Simpan</button>
+                  </td>
+                </tr>
+                {topups.map((topup, i) => (
                   <tr key={topup._id} className="border-b border-dark-border hover:bg-dark-surface">
-                    <td className="p-4">
+                    <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + i + 1}</td>
+                    <td className="p-4 text-center">
                       {new Date(topup.date).toLocaleDateString('id-ID')}
                     </td>
-                    <td className="p-4">{getPlatformBadge(topup.platform)}</td>
-                    <td className="p-4 text-dark-text-muted">
+                    <td className="p-4 text-center">{getPlatformBadge(topup.platform)}</td>
+                    <td className="p-4 text-center text-dark-text-muted">
                       {topup.adAccountId?.accountName || '-'}
                     </td>
                     {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
-                      <td className="p-4 text-dark-text-muted">
+                      <td className="p-4 text-center text-dark-text-muted">
                         {topup.clientId?.name || '-'}
                       </td>
                     )}
-                    <td className="p-4 text-right font-medium">
+                    <td className="p-4 text-center font-medium">
                       {formatCurrency(topup.amount)}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {getPaymentMethodBadge(topup.paymentMethod)}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {topup.receiptUrl ? (
                         <a
                           href={topup.receiptUrl}
@@ -298,7 +358,7 @@ const TopupsPage = () => {
                         <span className="text-dark-text-muted text-sm">-</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => navigate(`/topups/${topup._id}`)}
@@ -328,18 +388,97 @@ const TopupsPage = () => {
                 ))}
               </tbody>
             </table>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+            </div>
+            <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
           </div>
         ) : (
-          <div className="card text-center py-12">
-            <p className="text-dark-text-muted text-lg mb-2">No topups found</p>
-            {canCreate && (
-              <button
-                onClick={() => navigate('/topups/create')}
-                className="btn-primary mt-4"
-              >
-                Input First Topup
-              </button>
-            )}
+          <div ref={cardRef} className="card overflow-hidden">
+            <div ref={scrollRef} className="overflow-auto h-[70vh] no-x-scrollbar">
+              <table className="table-auto table-compact min-w-[1400px]">
+                <thead>
+                  <tr className="border-b border-dark-border">
+                    <th className="text-center p-2">No.</th>
+                    <th className="text-center p-4 font-semibold">Date</th>
+                    <th className="text-center p-4 font-semibold">Platform</th>
+                    <th className="text-center p-4 font-semibold">Ad Account</th>
+                    {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                      <th className="text-center p-4 font-semibold">Client</th>
+                    )}
+                    <th className="text-center p-4 font-semibold">Amount</th>
+                    <th className="text-center p-4 font-semibold">Payment Method</th>
+                    <th className="text-center p-4 font-semibold">Receipt</th>
+                    <th className="text-center p-4 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t border-dark-border bg-dark-card">
+                    <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + 1}</td>
+                    <td className="p-2"><input type="date" className="input w-full" value={newTopup.date} onChange={(e)=>setNewTopup((t)=>({...t,date:e.target.value}))} /></td>
+                    <td className="p-2">
+                      <select className="input w-full" value={newTopup.platform} onChange={(e)=>setNewTopup((t)=>({...t,platform:e.target.value}))}>
+                        <option value="">Pilih</option>
+                        <option value="META">Meta</option>
+                        <option value="TIKTOK">TikTok</option>
+                        <option value="GOOGLE">Google</option>
+                        <option value="X">X</option>
+                        <option value="LINKEDIN">LinkedIn</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </td>
+                    <td className="p-2">
+                      <select className="input w-full" value={newTopup.adAccountId} onChange={(e)=>setNewTopup((t)=>({...t,adAccountId:e.target.value}))}>
+                        <option value="">Pilih</option>
+                        {adAccounts.map((a)=>(<option key={a._id} value={a._id}>{a.accountName}</option>))}
+                      </select>
+                    </td>
+                    {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                      <td className="p-2 text-dark-text-muted">{clients.find(c=>c._id===appliedFilters.clientId)?.name || '-'}</td>
+                    )}
+                    <td className="p-2"><input type="number" className="input w-full" value={newTopup.amount} onChange={(e)=>setNewTopup((t)=>({...t,amount:e.target.value}))} placeholder="0" /></td>
+                    <td className="p-2">
+                      <select className="input w-full" value={newTopup.paymentMethod} onChange={(e)=>setNewTopup((t)=>({...t,paymentMethod:e.target.value}))}>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CREDIT_CARD">Credit Card</option>
+                        <option value="E_WALLET">E-Wallet</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </td>
+                    <td className="p-2"><input className="input w-full" value={newTopup.receiptUrl} onChange={(e)=>setNewTopup((t)=>({...t,receiptUrl:e.target.value}))} placeholder="https://..." /></td>
+                    <td className="p-2">
+                      <button className="btn-primary" onClick={async()=>{
+                        const payload = {
+                          clientId: appliedFilters.clientId || user?.clientId,
+                          adAccountId: newTopup.adAccountId,
+                          platform: newTopup.platform,
+                          date: newTopup.date,
+                          amount: Number(newTopup.amount||0),
+                          paymentMethod: newTopup.paymentMethod,
+                          notes: newTopup.notes || '',
+                          receiptUrl: newTopup.receiptUrl || '',
+                        };
+                        await topupService.createTopup(payload);
+                        setNewTopup({ date:'', platform:'', adAccountId:'', amount:'', paymentMethod:'BANK_TRANSFER', receiptUrl:'', notes:'' });
+                        fetchData();
+                      }}>Simpan</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-6 text-center text-dark-text-muted" colSpan={(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') ? 10 : 9}>No topups found</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+            </div>
+            <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
           </div>
         )}
       </div>

@@ -67,11 +67,6 @@ const Sidebar = () => {
         name: 'Topups',
         path: '/topups',
         icon: '💰',
-      },
-      {
-        name: 'Custom Fields',
-        path: '/custom-fields',
-        icon: '⚙️',
       }
     );
 

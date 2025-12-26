@@ -82,50 +82,19 @@ const ClientDashboard = () => {
           <p className="text-dark-text-muted">Overview performa iklan Anda</p>
         </div>
 
-        {/* Summary Cards - Sesuai Spreadsheet */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <SummaryCard
-            title="Total Biaya Marketing + PPN"
-            value={formatCurrency(summary?.totalSpend || 0)}
-            icon="💰"
-            className="bg-green-500/20 border-green-500"
-          />
-          <SummaryCard
-            title="Total Leads"
-            value={formatNumber(summary?.totalLeads || 0)}
-            icon="📋"
-          />
-          <SummaryCard
-            title="Omset"
-            value={formatCurrency(summary?.totalRevenue || 0)}
-            icon="📈"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <SummaryCard
-            title="CAC"
-            value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)}
-            subtitle="Customer Acquisition Cost"
-            icon="💵"
-          />
-          <SummaryCard
-            title="ROAS"
-            value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'}
-            subtitle="Return on Ad Spend"
-            icon="📊"
-          />
-          <SummaryCard
-            title="Total Ad Accounts"
-            value={summary?.totalAdAccounts || 0}
-            icon="📱"
-          />
-        </div>
-
-        {/* Total Impression Bulan ini */}
-        <div className="card mb-8 bg-cyan-500/20 border-cyan-500">
-          <h2 className="text-xl font-semibold mb-2">Total Impression Bulan ini</h2>
-          <p className="text-4xl font-bold">{formatNumber(summary?.totalImpressions || 0)}</p>
+        {/* Summary Cards Ordered */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <SummaryCard title="Total Ad Accounts" value={summary?.totalAdAccounts || 0} icon="📱" />
+          <SummaryCard title="Total Biaya Marketing + PPN" value={formatCurrency(summary?.totalSpendWithVat ?? summary?.totalSpend ?? 0)} icon="💰" className="bg-green-500/20 border-green-500" />
+          <SummaryCard title="Total Omset" value={formatCurrency(summary?.totalRevenue || 0)} icon="📈" />
+          <SummaryCard title="Total Budget Top Up" value={formatCurrency(summary?.totalTopup || 0)} icon="💳" />
+          <SummaryCard title="Saldo efektif hari ini" value={formatCurrency(summary?.effectiveBalance ?? 0)} icon="💳" className="bg-purple-500/20 border-purple-500" />
+          <SummaryCard title="Total Impressions" value={formatNumber(summary?.totalImpressions || 0)} icon="👁️" />
+          <SummaryCard title="Total Clicks" value={formatNumber(summary?.totalClicks || 0)} icon="🖱️" />
+          <SummaryCard title="Total Leads" value={formatNumber(summary?.totalLeads || 0)} icon="📋" />
+          <SummaryCard title="Closing" value={formatNumber(summary?.chartData?.funnel?.closing || 0)} icon="✅" />
+          <SummaryCard title="CAC" value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)} subtitle="Customer Acquisition Cost" icon="💵" />
+          <SummaryCard title="ROAS" value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'} subtitle="Return on Ad Spend" icon="📊" />
         </div>
 
         {/* Charts */}
@@ -138,28 +107,7 @@ const ClientDashboard = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <SummaryCard
-            title="Total Topup"
-            value={formatCurrency(summary?.totalTopup || 0)}
-            icon="💳"
-          />
-          <SummaryCard
-            title="Total Impressions"
-            value={formatNumber(summary?.totalImpressions || 0)}
-            icon="👁️"
-          />
-          <SummaryCard
-            title="Total Clicks"
-            value={formatNumber(summary?.totalClicks || 0)}
-            icon="🖱️"
-          />
-          <SummaryCard
-            title="Total Leads"
-            value={formatNumber(summary?.totalLeads || 0)}
-            icon="📋"
-          />
-        </div>
+        
 
         {/* Platform Metrics */}
         {summary?.platformMetrics && summary.platformMetrics.length > 0 && (

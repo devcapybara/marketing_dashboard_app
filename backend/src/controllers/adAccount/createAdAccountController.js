@@ -2,7 +2,7 @@ const createAdAccountService = require('../../services/adAccount/createAdAccount
 
 async function createAdAccountController(req, res, next) {
   try {
-    const { clientId, platform, accountName, accountId, currency } = req.body;
+    const { clientId, platform, accountName, accountId, currency, vatPercent } = req.body;
     const user = req.user;
 
     // Determine clientId based on user role
@@ -36,6 +36,7 @@ async function createAdAccountController(req, res, next) {
       accountName,
       accountId,
       currency,
+      vatPercent,
     };
 
     const newAdAccount = await createAdAccountService(adAccountData);

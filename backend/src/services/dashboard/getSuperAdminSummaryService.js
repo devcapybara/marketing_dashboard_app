@@ -2,6 +2,7 @@ const Client = require('../../models/Client');
 const DailyMetric = require('../../models/DailyMetric');
 const Topup = require('../../models/Topup');
 const AdAccount = require('../../models/AdAccount');
+const Lead = require('../../models/Lead');
 
 async function getSuperAdminSummaryService(filters = {}) {
   try {
@@ -96,19 +97,41 @@ async function getSuperAdminSummaryService(filters = {}) {
       }
     });
 
-    // Calculate CAC (Customer Acquisition Cost)
-    const cac = metrics.totalLeads > 0 ? metrics.totalSpend / metrics.totalLeads : 0;
-
-    // Funnel data (placeholder - bisa diambil dari custom fields atau leads breakdown)
-    // Untuk sekarang kita gunakan leads sebagai base
+    // Leads & Funnel from Leads collection (all clients)
+    const leadFilter = {};
+    if (dateFrom || dateTo) {
+      leadFilter.createdAt = {};
+      if (dateFrom) leadFilter.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) leadFilter.createdAt.$lte = new Date(dateTo);
+    }
+    const totalLeadsCount = await Lead.countDocuments(leadFilter);
+    const leadAgg = await Lead.aggregate([
+      { $match: leadFilter },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    const leadMap = new Map(leadAgg.map(l => [l._id || '', l.count]));
     const funnelData = {
-      totalLeads: metrics.totalLeads || 0,
-      noReply: 0, // TODO: bisa dari custom fields atau model terpisah
-      justAsking: 0,
-      potential: 0,
-      closing: 0,
-      retention: 0,
+      totalLeads: totalLeadsCount,
+      noReply: leadMap.get('Tidak ada balasan') || 0,
+      justAsking: leadMap.get('Masih tanya-tanya') || 0,
+      potential: leadMap.get('Potensial') || 0,
+      closing: leadMap.get('Closing') || 0,
+      retention: leadMap.get('Retensi') || 0,
     };
+    const cac = totalLeadsCount > 0 ? metrics.totalSpend / totalLeadsCount : 0;
+
+
+    // VAT per-ad account
+    const spendByAccount = await DailyMetric.aggregate([
+      { $match: dateFilter },
+      { $group: { _id: '$adAccountId', spend: { $sum: '$spend' } } },
+    ]);
+    const accountIds = spendByAccount.map((s) => s._id).filter(Boolean);
+    const accounts = await AdAccount.find({ _id: { $in: accountIds } }, { vatPercent: 1 }).lean();
+    const vatMap = new Map(accounts.map((a) => [a._id.toString(), typeof a.vatPercent === 'number' ? a.vatPercent : 11]));
+    const totalVat = spendByAccount.reduce((sum, s) => sum + s.spend * ((vatMap.get(s._id?.toString()) ?? 11) / 100), 0);
+    const totalSpendWithVat = metrics.totalSpend + totalVat;
+    const effectiveBalance = totalTopup - totalSpendWithVat;
 
     return {
       totalClients,
@@ -116,11 +139,14 @@ async function getSuperAdminSummaryService(filters = {}) {
       totalSpend: metrics.totalSpend,
       totalRevenue: metrics.totalRevenue,
       totalTopup,
+      totalVat: parseFloat(totalVat.toFixed(2)),
+      totalSpendWithVat: parseFloat(totalSpendWithVat.toFixed(2)),
+      effectiveBalance: parseFloat(effectiveBalance.toFixed(2)),
       roas: parseFloat(roas.toFixed(2)),
       cac: parseFloat(cac.toFixed(2)),
       totalImpressions: metrics.totalImpressions,
       totalClicks: metrics.totalClicks,
-      totalLeads: metrics.totalLeads,
+      totalLeads: totalLeadsCount,
       platformMetrics,
       chartData: {
         impressionSource: impressionData,

@@ -20,6 +20,7 @@ const EditAdAccountPage = () => {
     currency: 'IDR',
     isActive: true,
     clientId: '',
+    vatPercent: 11,
   });
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -47,6 +48,7 @@ const EditAdAccountPage = () => {
         currency: account.currency || 'IDR',
         isActive: account.isActive !== undefined ? account.isActive : true,
         clientId: account.clientId?._id || account.clientId || '',
+        vatPercent: typeof account.vatPercent === 'number' ? account.vatPercent : 11,
       });
     } catch (err) {
       console.error('Error fetching ad account:', err);
@@ -201,6 +203,12 @@ const EditAdAccountPage = () => {
               required
               placeholder="Enter account ID"
             />
+          </div>
+
+          <div>
+            <label htmlFor="vatPercent" className="block text-sm font-medium mb-2">PPN (%)</label>
+            <input id="vatPercent" name="vatPercent" type="number" min="0" max="100" value={formData.vatPercent} onChange={handleChange} className="input w-full" />
+            <p className="text-xs text-dark-text-muted mt-1">Default 11%. Digunakan untuk perhitungan saldo efektif.</p>
           </div>
 
           <div>
