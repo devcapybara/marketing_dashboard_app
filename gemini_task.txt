@@ -1,0 +1,7 @@
+Task: Implement Frontend Client Management (CRUD)
+
+1.  **Create Client List Page:** Build a page to display a list of all clients fetched from the `GET /api/clients` endpoint.
+2.  **Create "Create Client" Page:** Build a form and page to create a new client using the `POST /api/clients` endpoint.
+3.  **Create Client Detail Page:** Build a page to show details for a single client from `GET /api/clients/:id`.
+4.  **Create "Edit Client" Page:** Build a form to update a client's details.
+5.  **Implement Delete Functionality:** Add a button to delete a client.

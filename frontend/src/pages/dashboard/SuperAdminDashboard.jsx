@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import SummaryCard from '../../components/common/SummaryCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -10,6 +11,7 @@ const SuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [summary, setSummary] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -126,6 +128,16 @@ const SuperAdminDashboard = () => {
         <div className="card mb-8 bg-cyan-500/20 border-cyan-500">
           <h2 className="text-xl font-semibold mb-2">Total Impression Bulan ini</h2>
           <p className="text-4xl font-bold">{formatNumber(summary?.totalImpressions || 0)}</p>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {summary?.chartData?.impressionSource && (
+            <ImpressionSourceChart data={summary.chartData.impressionSource} />
+          )}
+          {summary?.chartData?.funnel && (
+            <FunnelChart data={summary.chartData.funnel} />
+          )}
         </div>
 
         {/* Platform Metrics */}

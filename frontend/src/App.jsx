@@ -28,6 +28,10 @@ import CustomFieldsPage from './pages/custom-fields/CustomFieldsPage';
 import AdminsPage from './pages/admins/AdminsPage';
 import CreateAdminPage from './pages/admins/CreateAdminPage';
 import AdminDetailPage from './pages/admins/AdminDetailPage';
+import PublicPage from './pages/site/PublicPage';
+import PageBuilder from './pages/site/PageBuilder';
+import UnauthorizedPage from './pages/auth/UnauthorizedPage';
+import LeadsPage from './pages/leads/LeadsPage';
 
 function App() {
   return (
@@ -232,7 +236,29 @@ function App() {
             }
           />
 
+          {/* Leads Management */}
+          <Route
+            path="/leads"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","CLIENT"]}>
+                <LeadsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Page Builder */}
+          <Route
+            path="/site/builder"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}>
+                <PageBuilder />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Default redirect */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/p/:slug" element={<PublicPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

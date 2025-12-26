@@ -35,3 +35,53 @@
     @apply bg-dark-surface border border-dark-border text-dark-text rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
   }
 }
+
+.gradient-hero {
+  background: radial-gradient(1200px 600px at 10% 0%, rgba(59,130,246,0.15), transparent), radial-gradient(800px 400px at 90% 100%, rgba(245,158,11,0.12), transparent);
+}
+
+.blob {
+  width: 380px;
+  height: 380px;
+  border-radius: 9999px;
+  filter: blur(60px);
+  background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(239,68,68,0.25));
+  animation: float 10s ease-in-out infinite;
+}
+
+.blob.delay-700 {
+  animation-delay: 0.7s;
+}
+
+@keyframes float {
+  0% { transform: translate(0,0) scale(1); opacity: 0.7; }
+  50% { transform: translate(20px,-10px) scale(1.05); opacity: 0.9; }
+  100% { transform: translate(0,0) scale(1); opacity: 0.7; }
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+  transform: rotate(15deg);
+  animation: shine 2.5s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-50%) rotate(15deg); }
+  100% { transform: translateX(50%) rotate(15deg); }
+}
+
+.glass {
+  backdrop-filter: blur(6px);
+  background-color: rgba(17,17,17,0.7);
+}

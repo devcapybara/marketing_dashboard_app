@@ -8,6 +8,7 @@ const getClientDetailController = require('../controllers/client/getClientDetail
 const listClientsController = require('../controllers/client/listClientsController');
 const updateClientController = require('../controllers/client/updateClientController');
 const deleteClientController = require('../controllers/client/deleteClientController');
+const updateLeadSettingsController = require('../controllers/client/updateLeadSettingsController');
 
 // All client routes require authentication
 router.use(authMiddleware);
@@ -30,6 +31,13 @@ router.put(
   '/:id',
   roleMiddleware(['SUPER_ADMIN', 'ADMIN']),
   updateClientController
+);
+
+// Update lead settings (sources, statuses, cs PIC options) - SUPER_ADMIN, ADMIN, CLIENT
+router.put(
+  '/:id/lead-settings',
+  roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'CLIENT']),
+  updateLeadSettingsController
 );
 
 // Delete client - SUPER_ADMIN and ADMIN only

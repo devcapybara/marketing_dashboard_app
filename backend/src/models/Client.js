@@ -27,6 +27,32 @@ const clientSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    leadSourceOptions: {
+      type: [String],
+      default: [
+        'Google Ads',
+        'TikTok Ads',
+        'Facebook',
+        'Instagram',
+        'Teman',
+        'Pelanggan Lama',
+        'Organik',
+      ],
+    },
+    leadStatusOptions: {
+      type: [String],
+      default: [
+        'Tidak ada balasan',
+        'Masih tanya-tanya',
+        'Potensial',
+        'Closing',
+        'Retensi',
+      ],
+    },
+    csPicOptions: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

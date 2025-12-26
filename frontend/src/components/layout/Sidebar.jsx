@@ -43,6 +43,11 @@ const Sidebar = () => {
           name: 'Ad Accounts',
           path: '/ad-accounts',
           icon: '📱',
+        },
+        {
+          name: 'Pages',
+          path: '/site/builder',
+          icon: '🧩',
         }
       );
     }
@@ -52,6 +57,11 @@ const Sidebar = () => {
         name: 'Metrics',
         path: '/metrics',
         icon: '📈',
+      },
+      {
+        name: 'Leads',
+        path: '/leads',
+        icon: '📇',
       },
       {
         name: 'Topups',

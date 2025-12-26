@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#111111" stroke="#1a1a1a"/>
+  <circle cx="20" cy="24" r="8" fill="#3b82f6"/>
+  <circle cx="44" cy="40" r="10" fill="#f59e0b"/>
+  <path d="M20 24 L44 40" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+  <text x="32" y="58" text-anchor="middle" font-family="Inter, system-ui, -apple-system, Segoe UI" font-size="10" fill="#ffffff">Marketing</text>
+</svg>
