@@ -113,7 +113,7 @@ const LeadDetailPage = () => {
           </div>
         </div>
         <div className="mt-4 flex justify-end">
-          <button className="btn-primary" onClick={async()=>{ await leadService.update(id, { name: lead?.name || '', phone: lead?.phone || '', username: lead?.username || '', csPic: lead?.csPic || '', source: lead?.source || '', address: lead?.address || '', notes: lead?.notes || '', status: lead?.status || '', followUp1: lead?.followUp1 || null, followUp2: lead?.followUp2 || null, followUp3: lead?.followUp3 || null, followUp4: lead?.followUp4 || null, followUp5: lead?.followUp5 || null }); setEditingLeft(false); }}>Save</button>
+          <button className="btn-primary" onClick={async()=>{ try { await leadService.update(id, { name: lead?.name || '', phone: lead?.phone || '', username: lead?.username || '', csPic: lead?.csPic || '', source: lead?.source || '', address: lead?.address || '', notes: lead?.notes || '', status: lead?.status || '', followUp1: lead?.followUp1 || null, followUp2: lead?.followUp2 || null, followUp3: lead?.followUp3 || null, followUp4: lead?.followUp4 || null, followUp5: lead?.followUp5 || null }); setEditingLeft(false); alert('Data berhasil tersimpan'); } catch(e){ alert(e?.response?.data?.message || 'Gagal menyimpan data'); } }}>Save</button>
         </div>
       </div>
     </DashboardLayout>

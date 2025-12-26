@@ -4,6 +4,8 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import SummaryCard from '../../components/common/SummaryCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ImpressionSourceChart from '../../components/charts/ImpressionSourceChart';
+import { clientService } from '../../services/clientService';
+import { listAdmins } from '../../services/userService';
 import FunnelChart from '../../components/charts/FunnelChart';
 import { dashboardService } from '../../services/dashboardService';
 
@@ -12,16 +14,38 @@ const SuperAdminDashboard = () => {
   const [error, setError] = useState(null);
   const [summary, setSummary] = useState(null);
   const navigate = useNavigate();
+  const [clients, setClients] = useState([]);
+  const [admins, setAdmins] = useState([]);
+  const toISO = (d) => d.toISOString().slice(0,10);
+  const today = new Date();
+  const start30 = new Date(today); start30.setDate(start30.getDate() - 29);
+  const [filters, setFilters] = useState({ dateFrom: toISO(start30), dateTo: toISO(today) });
+  const [preset, setPreset] = useState('30');
 
   useEffect(() => {
     fetchDashboardData();
+  }, [filters]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cRes = await clientService.listClients();
+        setClients(cRes.data || []);
+      } catch {}
+      try {
+        const aRes = await listAdmins();
+        const arr = Array.isArray(aRes?.data) ? aRes.data : (aRes || []);
+        setAdmins(arr || []);
+      } catch {}
+    };
+    load();
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await dashboardService.getSuperAdminSummary();
+      const response = await dashboardService.getSuperAdminSummary(filters);
       setSummary(response.data);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -84,6 +108,61 @@ const SuperAdminDashboard = () => {
           <p className="text-dark-text-muted">Overview semua klien dan performa iklan</p>
         </div>
 
+        <div className="card mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium mb-2">Preset</label>
+              <select value={preset} onChange={(e)=>{
+                const v = e.target.value; setPreset(v);
+                const t = new Date(); const isoT = toISO(t);
+                const setRange = (days)=>{ const s = new Date(t); s.setDate(s.getDate()- (days-1)); setFilters({ dateFrom: toISO(s), dateTo: isoT }); };
+                if (v==='1') setRange(1);
+                else if (v==='7') setRange(7);
+                else if (v==='14') setRange(14);
+                else if (v==='28') setRange(28);
+                else if (v==='3m') { const s = new Date(t); s.setMonth(s.getMonth()-3); setFilters({ dateFrom: toISO(s), dateTo: isoT }); }
+                else if (v==='this-year') { const s = new Date(t.getFullYear(),0,1); setFilters({ dateFrom: toISO(s), dateTo: isoT }); }
+                else if (v==='last-year') { const s = new Date(t.getFullYear()-1,0,1); const e = new Date(t.getFullYear()-1,11,31); setFilters({ dateFrom: toISO(s), dateTo: toISO(e) }); }
+                else setRange(30);
+              }} className="input w-full">
+                <option value="30">30 hari terakhir</option>
+                <option value="28">28 hari terakhir</option>
+                <option value="14">14 hari terakhir</option>
+                <option value="7">7 hari terakhir</option>
+                <option value="1">Hari ini</option>
+                <option value="3m">3 bulan terakhir</option>
+                <option value="this-year">Tahun ini</option>
+                <option value="last-year">Tahun lalu</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Client</label>
+              <select value={filters.clientId || ''} onChange={(e)=>setFilters((f)=>({...f, clientId: e.target.value, adminId: '' }))} className="input w-full">
+                <option value="">Semua</option>
+                {clients.map((c)=>(<option key={c._id} value={c._id}>{c.name}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Admin</label>
+              <select value={filters.adminId || ''} onChange={(e)=>setFilters((f)=>({...f, adminId: e.target.value, clientId: '' }))} className="input w-full">
+                <option value="">Semua</option>
+                {admins.map((a)=>(<option key={a._id} value={a._id}>{a.name}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Dari</label>
+              <input type="date" value={filters.dateFrom} onChange={(e)=>setFilters((f)=>({...f,dateFrom:e.target.value}))} className="input w-full" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Sampai</label>
+              <input type="date" value={filters.dateTo} onChange={(e)=>setFilters((f)=>({...f,dateTo:e.target.value}))} className="input w-full" />
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button className="btn-secondary" onClick={()=>fetchDashboardData()}>Update</button>
+            </div>
+          </div>
+        </div>
+
         {/* Summary Cards Ordered */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SummaryCard title="Total Ad Accounts" value={summary?.totalAdAccounts || 0} icon="📱" />
@@ -102,8 +181,8 @@ const SuperAdminDashboard = () => {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {summary?.chartData?.impressionSource && (
-            <ImpressionSourceChart data={summary.chartData.impressionSource} />
+          {summary?.platformMetrics && (
+            <ImpressionSourceChart data={summary.platformMetrics} />
           )}
           {summary?.chartData?.funnel && (
             <FunnelChart data={summary.chartData.funnel} />

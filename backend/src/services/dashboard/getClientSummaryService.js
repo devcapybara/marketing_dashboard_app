@@ -20,10 +20,7 @@ async function getClientSummaryService(clientId, filters = {}) {
     }
 
     // Get total ad accounts
-    const totalAdAccounts = await AdAccount.countDocuments({
-      clientId,
-      isActive: true,
-    });
+    const totalAdAccounts = await AdAccount.countDocuments({ clientId, isActive: true });
 
     // Get metrics aggregation
     const metricsAggregation = await DailyMetric.aggregate([
@@ -97,15 +94,20 @@ async function getClientSummaryService(clientId, filters = {}) {
     });
 
     // Leads and Funnel from Leads collection
-    const leadFilter = { clientId };
-    if (dateFrom || dateTo) {
-      leadFilter.createdAt = {};
-      if (dateFrom) leadFilter.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) leadFilter.createdAt.$lte = new Date(dateTo);
-    }
-    const totalLeadsCount = await Lead.countDocuments(leadFilter);
+    const startDate = dateFrom ? (()=>{ const d = new Date(dateFrom); d.setHours(0,0,0,0); return d; })() : null;
+    const endDate = dateTo ? (()=>{ const d = new Date(dateTo); d.setHours(23,59,59,999); return d; })() : null;
+    const leadMatch = { clientId };
+    const exprConds = [];
+    if (startDate) exprConds.push({ $gte: [{ $ifNull: [ '$createdAt', { $toDate: '$_id' } ] }, startDate ] });
+    if (endDate) exprConds.push({ $lte: [{ $ifNull: [ '$createdAt', { $toDate: '$_id' } ] }, endDate ] });
+    if (exprConds.length > 0) leadMatch.$expr = { $and: exprConds };
+    const totalLeadsAgg = await Lead.aggregate([
+      { $match: leadMatch },
+      { $count: 'count' },
+    ]);
+    const totalLeadsCount = totalLeadsAgg[0]?.count || 0;
     const leadAgg = await Lead.aggregate([
-      { $match: leadFilter },
+      { $match: leadMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
     const leadMap = new Map(leadAgg.map(l => [l._id || '', l.count]));

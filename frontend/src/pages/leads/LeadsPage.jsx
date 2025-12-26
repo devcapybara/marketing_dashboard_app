@@ -27,6 +27,7 @@ const LeadsPage = () => {
   const LIMIT = 25;
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
 
   const statusOptions = useMemo(() => clientDetail?.leadStatusOptions || DEFAULT_STATUS, [clientDetail]);
   const sourceOptions = useMemo(() => clientDetail?.leadSourceOptions || DEFAULT_SOURCE, [clientDetail]);
@@ -44,7 +45,7 @@ const LeadsPage = () => {
         const activeClientId = user?.role === 'CLIENT' ? user?.clientId : clientId;
         if (activeClientId) {
           const [leadsRes, clientRes] = await Promise.all([
-            leadService.list(activeClientId, page, LIMIT),
+            leadService.list(activeClientId, page, LIMIT, search),
             clientService.getClientById(activeClientId),
           ]);
           setLeads(leadsRes?.data || []);
@@ -61,7 +62,7 @@ const LeadsPage = () => {
   }, [user?.role, user?.clientId, clientId, page]);
 
   const refreshLeads = async () => {
-    const res = await leadService.list(clientId || user?.clientId, page, LIMIT);
+    const res = await leadService.list(clientId || user?.clientId, page, LIMIT, search);
     setLeads(res?.data || []);
     setTotal(res?.meta?.total || 0);
   };
@@ -102,6 +103,7 @@ const LeadsPage = () => {
             <LoadingSpinner />
           </div>
         </div>
+        
       </DashboardLayout>
     );
   }
@@ -109,27 +111,38 @@ const LeadsPage = () => {
   return (
     <DashboardLayout>
       <div className="w-full px-4 py-4">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">CRM Leads</h1>
             <p className="text-dark-text-muted">Kelola leads dan status follow‑up</p>
           </div>
-          {user?.role === 'ADMIN' && (
-            <select className="input w-60" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-              <option value="">Pilih Client</option>
-              {clients.map((c) => (
-                <option key={c._id} value={c._id}>{c.name || c.companyName || c._id}</option>
-              ))}
-            </select>
-          )}
+          <div className="flex items-end gap-3">
+            {user?.role === 'ADMIN' && (
+              <select className="input w-60" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+                <option value="">Pilih Client</option>
+                {clients.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name || c.companyName || c._id}</option>
+                ))}
+              </select>
+            )}
+            <input
+              className="input w-64"
+              placeholder="Cari: Nama / No HP / Username"
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+            />
+            <button className="btn-secondary" onClick={()=>{ setPage(1); refreshLeads(); }}>Cari</button>
+            <button className="btn-secondary" onClick={()=>{ setSearch(''); setPage(1); refreshLeads(); }}>Reset</button>
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-4">
           <div ref={cardRef} className="card min-h-[70vh] overflow-hidden">
             <div ref={scrollRef} className="overflow-x-auto no-x-scrollbar">
-              <table className="table-auto table-compact min-w-[1600px]">
+              <table className="table-auto table-compact min-w-[1760px]">
                 <thead>
                   <tr className="text-left">
                     <th className="px-4 py-2 w-[80px]">No.</th>
+                    <th className="px-4 py-2 w-[140px]">Tanggal</th>
                     <th className="px-4 py-2">Nama</th>
                     <th className="px-4 py-2">HP</th>
                     <th className="px-4 py-2">IG/TikTok</th>
@@ -148,6 +161,7 @@ const LeadsPage = () => {
                 <tbody>
                   <tr className="border-t border-dark-border bg-dark-card">
                     <td className="px-4 py-2 w-[80px] text-center">{(total || 0) + 1}</td>
+                    <td className="px-4 py-2 w-[140px]">{new Date().toLocaleDateString('id-ID')}</td>
                     <td className="px-4 py-2"><input className="input" value={newLead.name} onChange={(e)=>setNewLead({...newLead,name:e.target.value})} placeholder="Nama" /></td>
                     <td className="px-4 py-2"><input className="input" value={newLead.phone} onChange={(e)=>setNewLead({...newLead,phone:e.target.value})} placeholder="HP" /></td>
                     <td className="px-4 py-2"><input className="input" value={newLead.username} onChange={(e)=>setNewLead({...newLead,username:e.target.value})} placeholder="IG/TikTok" /></td>
@@ -245,6 +259,7 @@ const LeadsPage = () => {
                     leads.map((l, i) => (
                       <tr key={l._id} className="border-t border-dark-border bg-dark-surface/60 cursor-pointer hover:bg-dark-card" onClick={()=>navigate(`/leads/${l._id}`)}>
                         <td className="px-4 py-2 w-[80px] text-center">{l.counter ?? ((page - 1) * LIMIT + i + 1)}</td>
+                        <td className="px-4 py-2 w-[140px]">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('id-ID') : '-'}</td>
                         <td className="px-4 py-2">{l.name || '-'}</td>
                         <td className="px-4 py-2">{l.phone || '-'}</td>
                         <td className="px-4 py-2">{l.username || '-'}</td>

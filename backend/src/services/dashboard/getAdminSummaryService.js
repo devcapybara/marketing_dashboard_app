@@ -5,7 +5,7 @@ const Lead = require('../../models/Lead');
 
 async function getAdminSummaryService(managedClientIds, filters = {}) {
   try {
-    const { dateFrom, dateTo } = filters;
+    const { dateFrom, dateTo, clientId } = filters;
 
     if (!managedClientIds || managedClientIds.length === 0) {
       return {
@@ -22,7 +22,7 @@ async function getAdminSummaryService(managedClientIds, filters = {}) {
     }
 
     // Build date filter
-    const dateFilter = { clientId: { $in: managedClientIds } };
+    const dateFilter = { clientId: clientId ? clientId : { $in: managedClientIds } };
     if (dateFrom || dateTo) {
       dateFilter.date = {};
       if (dateFrom) {
@@ -35,7 +35,7 @@ async function getAdminSummaryService(managedClientIds, filters = {}) {
 
     // Get total ad accounts for managed clients
     const totalAdAccounts = await AdAccount.countDocuments({
-      clientId: { $in: managedClientIds },
+      clientId: clientId ? clientId : { $in: managedClientIds },
       isActive: true,
     });
 
@@ -111,15 +111,20 @@ async function getAdminSummaryService(managedClientIds, filters = {}) {
     });
 
     // Leads & Funnel from Leads collection (managed clients)
-    const leadFilter = { clientId: { $in: managedClientIds } };
-    if (dateFrom || dateTo) {
-      leadFilter.createdAt = {};
-      if (dateFrom) leadFilter.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) leadFilter.createdAt.$lte = new Date(dateTo);
-    }
-    const totalLeadsCount = await Lead.countDocuments(leadFilter);
+    const startDate = dateFrom ? (()=>{ const d = new Date(dateFrom); d.setHours(0,0,0,0); return d; })() : null;
+    const endDate = dateTo ? (()=>{ const d = new Date(dateTo); d.setHours(23,59,59,999); return d; })() : null;
+    const leadMatch = { clientId: clientId ? clientId : { $in: managedClientIds } };
+    const exprConds = [];
+    if (startDate) exprConds.push({ $gte: [{ $ifNull: [ '$createdAt', { $toDate: '$_id' } ] }, startDate ] });
+    if (endDate) exprConds.push({ $lte: [{ $ifNull: [ '$createdAt', { $toDate: '$_id' } ] }, endDate ] });
+    if (exprConds.length > 0) leadMatch.$expr = { $and: exprConds };
+    const totalLeadsAgg = await Lead.aggregate([
+      { $match: leadMatch },
+      { $count: 'count' },
+    ]);
+    const totalLeadsCount = totalLeadsAgg[0]?.count || 0;
     const leadAgg = await Lead.aggregate([
-      { $match: leadFilter },
+      { $match: leadMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
     const leadMap = new Map(leadAgg.map(l => [l._id || '', l.count]));
