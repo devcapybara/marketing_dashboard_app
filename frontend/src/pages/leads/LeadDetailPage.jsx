@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -17,10 +17,18 @@ const LeadDetailPage = () => {
   const [error, setError] = useState(null);
   const [clientDetail, setClientDetail] = useState(null);
   const [editingLeft, setEditingLeft] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [newTx, setNewTx] = useState({ date: '', product: '', amount: '', paymentMethod: '', attachment: '' });
+  const scrollRef = useRef(null);
+  const cardRef = useRef(null);
+  const [txPage, setTxPage] = useState(1);
+  const [txLimit, setTxLimit] = useState(14);
 
   const statusOptions = useMemo(() => clientDetail?.leadStatusOptions || ['Tidak ada balasan','Masih tanya-tanya','Potensial','Closing','Retensi'], [clientDetail]);
   const sourceOptions = useMemo(() => clientDetail?.leadSourceOptions || ['Google Ads','TikTok Ads','Facebook','Instagram','Teman','Pelanggan Lama','Organik'], [clientDetail]);
   const csPicOptions = useMemo(() => clientDetail?.csPicOptions || [], [clientDetail]);
+  const productOptions = useMemo(() => clientDetail?.productOptions || ['Jasa Konsultasi','Paket Desain','Produk Fisik'], [clientDetail]);
+  const paymentOptions = useMemo(() => clientDetail?.paymentMethodOptions || ['Transfer','Tunai','QRIS'], [clientDetail]);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -41,7 +49,18 @@ const LeadDetailPage = () => {
       }
     };
     fetchDetail();
+    try {
+      const v = JSON.parse(localStorage.getItem(`lead_transactions_${id}`) || '[]');
+      setTransactions(Array.isArray(v) ? v : []);
+    } catch {}
   }, [id]);
+
+  const persistTx = (list) => {
+    setTransactions(list);
+    try { localStorage.setItem(`lead_transactions_${id}`, JSON.stringify(list)); } catch {}
+  };
+
+  const formatCurrency = (v) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(v||0));
 
   if (loading) {
     return (
@@ -114,6 +133,93 @@ const LeadDetailPage = () => {
         </div>
         <div className="mt-4 flex justify-end">
           <button className="btn-primary" onClick={async()=>{ try { await leadService.update(id, { name: lead?.name || '', phone: lead?.phone || '', username: lead?.username || '', csPic: lead?.csPic || '', source: lead?.source || '', address: lead?.address || '', notes: lead?.notes || '', status: lead?.status || '', followUp1: lead?.followUp1 || null, followUp2: lead?.followUp2 || null, followUp3: lead?.followUp3 || null, followUp4: lead?.followUp4 || null, followUp5: lead?.followUp5 || null }); setEditingLeft(false); alert('Data berhasil tersimpan'); } catch(e){ alert(e?.response?.data?.message || 'Gagal menyimpan data'); } }}>Save</button>
+        </div>
+
+        <div className="mt-6 card overflow-hidden" ref={cardRef}>
+          <div className="flex items-center justify-between mb-3 px-2">
+            <h3 className="text-lg font-semibold">Transaksi</h3>
+          </div>
+          <div className="overflow-x-auto no-x-scrollbar relative" ref={scrollRef}>
+            <table className="table-auto table-compact min-w-[1400px]">
+              <thead>
+                <tr className="border-b border-dark-border">
+                  <th className="text-center p-2">No.</th>
+                  <th className="text-center p-4 font-semibold">Tanggal</th>
+                  <th className="text-center p-4 font-semibold">Produk/Layanan</th>
+                  <th className="text-center p-4 font-semibold">Jumlah Harga</th>
+                  <th className="text-center p-4 font-semibold">Metode Pembayaran</th>
+                  <th className="text-center p-4 font-semibold">Lampiran</th>
+                  <th className="text-center p-4 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-dark-border bg-dark-card">
+                  <td className="p-2 text-center w-[80px]">{transactions.length + 1}</td>
+                  <td className="p-2"><input type="date" className="input w-full" value={newTx.date} onChange={(e)=>setNewTx((t)=>({...t,date:e.target.value}))} /></td>
+                  <td className="p-2">
+                    <DropdownEditor kind="Produk/Layanan" options={productOptions} value={newTx.product} onChange={(v)=>setNewTx((t)=>({...t,product:v}))}
+                      canDelete={(label)=>label && !['Jasa Konsultasi','Paket Desain','Produk Fisik'].includes(label)}
+                      onCreate={async (label)=>{ const next=[...productOptions,label]; setClientDetail((prev)=>({...prev, productOptions:next})); await api.put(`/api/clients/${lead?.clientId}/lead-settings`,{ productOptions:next}); setNewTx((t)=>({...t,product:label})); }}
+                      onDelete={async (label)=>{ if(['Jasa Konsultasi','Paket Desain','Produk Fisik'].includes(label))return; const next=productOptions.filter((o)=>o!==label); setClientDetail((prev)=>({...prev, productOptions:next})); await api.put(`/api/clients/${lead?.clientId}/lead-settings`,{ productOptions:next}); if(newTx.product===label) setNewTx((t)=>({...t,product:''})); }} placeholder="Pilih" />
+                  </td>
+                  <td className="p-2"><input type="number" className="input w-full" value={newTx.amount} onChange={(e)=>setNewTx((t)=>({...t,amount:e.target.value}))} placeholder="0" /></td>
+                  <td className="p-2">
+                    <DropdownEditor kind="Metode Pembayaran" options={paymentOptions} value={newTx.paymentMethod} onChange={(v)=>setNewTx((t)=>({...t,paymentMethod:v}))}
+                      canDelete={(label)=>label && !['Transfer','Tunai','QRIS'].includes(label)}
+                      onCreate={async (label)=>{ const next=[...paymentOptions,label]; setClientDetail((prev)=>({...prev, paymentMethodOptions:next})); await api.put(`/api/clients/${lead?.clientId}/lead-settings`,{ paymentMethodOptions:next}); setNewTx((t)=>({...t,paymentMethod:label})); }}
+                      onDelete={async (label)=>{ if(['Transfer','Tunai','QRIS'].includes(label))return; const next=paymentOptions.filter((o)=>o!==label); setClientDetail((prev)=>({...prev, paymentMethodOptions:next})); await api.put(`/api/clients/${lead?.clientId}/lead-settings`,{ paymentMethodOptions:next}); if(newTx.paymentMethod===label) setNewTx((t)=>({...t,paymentMethod:''})); }} placeholder="Pilih" />
+                  </td>
+                  <td className="p-2"><input className="input w-full" value={newTx.attachment} onChange={(e)=>setNewTx((t)=>({...t,attachment:e.target.value}))} placeholder="Link lampiran (opsional)" /></td>
+                  <td className="p-2">
+                    <button className="btn-primary" onClick={()=>{ const item={ id: Date.now(), date:newTx.date, product:newTx.product, amount:Number(newTx.amount||0), paymentMethod:newTx.paymentMethod, attachment:newTx.attachment }; const next=[item,...transactions]; persistTx(next); setNewTx({ date:'', product:'', amount:'', paymentMethod:'', attachment:'' }); }}>Simpan</button>
+                  </td>
+                </tr>
+                {transactions.length===0 && (
+                  <tr>
+                    <td className="p-6 text-center text-dark-text-muted" colSpan={7}>Belum ada transaksi</td>
+                  </tr>
+                )}
+                {transactions.slice((txPage-1)*txLimit, (txPage-1)*txLimit + txLimit).map((tx, i)=> (
+                  <tr key={tx.id} className="border-b border-dark-border hover:bg-dark-surface">
+                    <td className="p-2 text-center w-[80px]">{((txPage-1)*txLimit) + i + 1}</td>
+                    <td className="p-4 text-center">{tx.date ? new Date(tx.date).toLocaleDateString('id-ID') : '-'}</td>
+                    <td className="p-4 text-center text-dark-text-muted">{tx.product || '-'}</td>
+                    <td className="p-4 text-center font-medium">{formatCurrency(tx.amount)}</td>
+                    <td className="p-4 text-center text-dark-text-muted">{tx.paymentMethod || '-'}</td>
+                    <td className="p-4 text-center text-dark-text-muted">{tx.attachment ? <a href={tx.attachment} target="_blank" rel="noopener noreferrer" className="text-primary">Lampiran</a> : '-'}</td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>alert(JSON.stringify(tx,null,2))}>View</button>
+                        <button className="text-red-400 hover:text-red-300 text-sm" onClick={()=>{ const next=transactions.filter((t)=>t.id!==tx.id); persistTx(next); }}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {transactions.length>0 && (()=>{
+                  const totalAmount = transactions.reduce((s,t)=> s + Number(t.amount||0), 0);
+                  return (
+                    <tr className="border-t border-dark-border bg-dark-card">
+                      <td className="p-4 text-right font-semibold" colSpan={3}>Total</td>
+                      <td className="p-4 text-center font-semibold">{formatCurrency(totalAmount)}</td>
+                      <td className="p-4 text-center font-semibold" colSpan={3}></td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-end gap-2 px-4 py-2">
+            <select className="input w-24" value={txLimit} onChange={(e)=>{ setTxLimit(Number(e.target.value)); setTxPage(1); }}>
+              <option value="7">7</option>
+              <option value="14">14</option>
+              <option value="31">31</option>
+              <option value="60">60</option>
+              <option value="90">90</option>
+            </select>
+            <button className="btn-secondary" disabled={txPage<=1} onClick={()=>setTxPage((p)=>Math.max(1,p-1))}>Prev</button>
+            <span className="text-sm">Page {txPage} / {Math.max(1, Math.ceil(transactions.length / txLimit))}</span>
+            <button className="btn-secondary" disabled={txPage>=Math.ceil(transactions.length/txLimit)} onClick={()=>setTxPage((p)=>p+1)}>Next</button>
+          </div>
         </div>
       </div>
     </DashboardLayout>
