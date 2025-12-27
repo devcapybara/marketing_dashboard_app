@@ -28,17 +28,25 @@
   }
 
   .card {
-    @apply bg-dark-card border border-dark-border rounded-lg p-6;
+    @apply border border-dark-border rounded-lg p-4 md:p-6;
+    backdrop-filter: blur(8px);
+    background-color: rgba(17,17,17,0.55);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   }
 
   .input {
     @apply bg-dark-surface border border-dark-border text-dark-text rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
   }
   .table-compact {
-    font-size: 10px;
+    font-size: clamp(9px, 1.6vw, 12px);
   }
   .table-compact th, .table-compact td {
-    padding: 4px 6px;
+    padding: 3px 4px;
+  }
+  @media (min-width: 768px) {
+    .table-compact th, .table-compact td {
+      padding: 4px 6px;
+    }
   }
   .table-compact .input {
     @apply px-2 py-1;

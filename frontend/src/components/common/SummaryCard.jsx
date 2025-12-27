@@ -3,8 +3,8 @@ const SummaryCard = ({ title, value, subtitle, icon, trend }) => {
     <div className="card">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-dark-text-muted mb-1">{title}</p>
-          <p className="text-2xl font-bold text-dark-text">{value}</p>
+          <p className="text-xs md:text-sm text-dark-text-muted mb-1">{title}</p>
+          <p className="text-xl md:text-2xl font-bold text-dark-text">{value}</p>
           {subtitle && (
             <p className="text-xs text-dark-text-muted mt-1">{subtitle}</p>
           )}
@@ -15,7 +15,7 @@ const SummaryCard = ({ title, value, subtitle, icon, trend }) => {
           )}
         </div>
         {icon && (
-          <div className="text-4xl opacity-50">{icon}</div>
+          <div className="text-3xl md:text-4xl opacity-50">{icon}</div>
         )}
       </div>
     </div>
