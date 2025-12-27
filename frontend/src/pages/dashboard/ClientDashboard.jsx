@@ -10,16 +10,21 @@ const ClientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [summary, setSummary] = useState(null);
+  const toISO = (d) => d.toISOString().slice(0,10);
+  const today = new Date();
+  const start30 = new Date(today); start30.setDate(start30.getDate() - 29);
+  const [filters, setFilters] = useState({ dateFrom: toISO(start30), dateTo: toISO(today) });
+  const [preset, setPreset] = useState('30');
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [filters]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await dashboardService.getClientSummary();
+      const response = await dashboardService.getClientSummary(filters);
       setSummary(response.data);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -82,84 +87,74 @@ const ClientDashboard = () => {
           <p className="text-dark-text-muted">Overview performa iklan Anda</p>
         </div>
 
-        {/* Summary Cards - Sesuai Spreadsheet */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <SummaryCard
-            title="Total Biaya Marketing + PPN"
-            value={formatCurrency(summary?.totalSpend || 0)}
-            icon="💰"
-            className="bg-green-500/20 border-green-500"
-          />
-          <SummaryCard
-            title="Total Leads"
-            value={formatNumber(summary?.totalLeads || 0)}
-            icon="📋"
-          />
-          <SummaryCard
-            title="Omset"
-            value={formatCurrency(summary?.totalRevenue || 0)}
-            icon="📈"
-          />
+        <div className="card mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium mb-2">Preset</label>
+              <select value={preset} onChange={(e)=>{
+                const v = e.target.value; setPreset(v);
+                const t = new Date(); const isoT = toISO(t);
+                const setRange = (days)=>{ const s = new Date(t); s.setDate(s.getDate()- (days-1)); setFilters({ dateFrom: toISO(s), dateTo: isoT }); };
+                if (v==='1') setRange(1);
+                else if (v==='7') setRange(7);
+                else if (v==='14') setRange(14);
+                else if (v==='28') setRange(28);
+                else if (v==='3m') { const s = new Date(t); s.setMonth(s.getMonth()-3); setFilters({ dateFrom: toISO(s), dateTo: isoT }); }
+                else if (v==='this-year') { const s = new Date(t.getFullYear(),0,1); setFilters({ dateFrom: toISO(s), dateTo: isoT }); }
+                else if (v==='last-year') { const s = new Date(t.getFullYear()-1,0,1); const e = new Date(t.getFullYear()-1,11,31); setFilters({ dateFrom: toISO(s), dateTo: toISO(e) }); }
+                else setRange(30);
+              }} className="input w-full">
+                <option value="30">30 hari terakhir</option>
+                <option value="28">28 hari terakhir</option>
+                <option value="14">14 hari terakhir</option>
+                <option value="7">7 hari terakhir</option>
+                <option value="1">Hari ini</option>
+                <option value="3m">3 bulan terakhir</option>
+                <option value="this-year">Tahun ini</option>
+                <option value="last-year">Tahun lalu</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Dari</label>
+              <input type="date" value={filters.dateFrom} onChange={(e)=>setFilters((f)=>({...f,dateFrom:e.target.value}))} className="input w-full" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Sampai</label>
+              <input type="date" value={filters.dateTo} onChange={(e)=>setFilters((f)=>({...f,dateTo:e.target.value}))} className="input w-full" />
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button className="btn-secondary" onClick={()=>fetchDashboardData()}>Update</button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <SummaryCard
-            title="CAC"
-            value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)}
-            subtitle="Customer Acquisition Cost"
-            icon="💵"
-          />
-          <SummaryCard
-            title="ROAS"
-            value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'}
-            subtitle="Return on Ad Spend"
-            icon="📊"
-          />
-          <SummaryCard
-            title="Total Ad Accounts"
-            value={summary?.totalAdAccounts || 0}
-            icon="📱"
-          />
-        </div>
-
-        {/* Total Impression Bulan ini */}
-        <div className="card mb-8 bg-cyan-500/20 border-cyan-500">
-          <h2 className="text-xl font-semibold mb-2">Total Impression Bulan ini</h2>
-          <p className="text-4xl font-bold">{formatNumber(summary?.totalImpressions || 0)}</p>
+        {/* Summary Cards Ordered */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <SummaryCard title="Total Ad Accounts" value={summary?.totalAdAccounts || 0} icon="📱" />
+          <SummaryCard title="Total Biaya Marketing + PPN" value={formatCurrency(summary?.totalSpendWithVat ?? summary?.totalSpend ?? 0)} icon="💰" className="bg-green-500/20 border-green-500" />
+          <SummaryCard title="Total Omset" value={formatCurrency(summary?.totalRevenue || 0)} icon="📈" />
+          <SummaryCard title="Total Budget Top Up" value={formatCurrency(summary?.totalTopup || 0)} icon="💳" />
+          <SummaryCard title="Saldo efektif hari ini" value={formatCurrency(summary?.effectiveBalance ?? 0)} icon="💳" className="bg-purple-500/20 border-purple-500" />
+          <SummaryCard title="Total Impressions" value={formatNumber(summary?.totalImpressions || 0)} icon="👁️" />
+          <SummaryCard title="Total Clicks" value={formatNumber(summary?.totalClicks || 0)} icon="🖱️" />
+          <SummaryCard title="Total Leads" value={formatNumber(summary?.totalLeads || 0)} icon="📋" />
+          <SummaryCard title="Cost per Lead" value={formatCurrency(summary?.cpl || 0)} icon="💡" />
+          <SummaryCard title="Closing" value={formatNumber(summary?.chartData?.funnel?.closing || 0)} icon="✅" />
+          <SummaryCard title="CAC" value={summary?.cac ? formatCurrency(summary.cac) : formatCurrency(0)} subtitle="Customer Acquisition Cost" icon="💵" />
+          <SummaryCard title="ROAS" value={summary?.roas ? `${summary.roas.toFixed(2)}x` : '0.00x'} subtitle="Return on Ad Spend" icon="📊" />
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {summary?.chartData?.impressionSource && (
-            <ImpressionSourceChart data={summary.chartData.impressionSource} />
+          {summary?.platformMetrics && (
+            <ImpressionSourceChart data={summary.platformMetrics} />
           )}
           {summary?.chartData?.funnel && (
             <FunnelChart data={summary.chartData.funnel} />
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <SummaryCard
-            title="Total Topup"
-            value={formatCurrency(summary?.totalTopup || 0)}
-            icon="💳"
-          />
-          <SummaryCard
-            title="Total Impressions"
-            value={formatNumber(summary?.totalImpressions || 0)}
-            icon="👁️"
-          />
-          <SummaryCard
-            title="Total Clicks"
-            value={formatNumber(summary?.totalClicks || 0)}
-            icon="🖱️"
-          />
-          <SummaryCard
-            title="Total Leads"
-            value={formatNumber(summary?.totalLeads || 0)}
-            icon="📋"
-          />
-        </div>
+        
 
         {/* Platform Metrics */}
         {summary?.platformMetrics && summary.platformMetrics.length > 0 && (

@@ -10,12 +10,10 @@ const getLeadDetailController = require('../controllers/lead/getLeadDetailContro
 const updateLeadController = require('../controllers/lead/updateLeadController');
 const deleteLeadController = require('../controllers/lead/deleteLeadController');
 
-router.use(authMiddleware);
-
-router.get('/', roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), clientAccessMiddleware, listLeadsController);
-router.post('/', roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), clientAccessMiddleware, createLeadController);
-router.get('/:id', roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), getLeadDetailController);
-router.put('/:id', roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), updateLeadController);
-router.delete('/:id', roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), deleteLeadController);
+router.get('/', authMiddleware, roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), listLeadsController);
+router.post('/', authMiddleware, roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), clientAccessMiddleware, createLeadController);
+router.get('/:id', authMiddleware, roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), getLeadDetailController);
+router.put('/:id', authMiddleware, roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), updateLeadController);
+router.delete('/:id', authMiddleware, roleMiddleware(['SUPER_ADMIN','ADMIN','CLIENT']), deleteLeadController);
 
 module.exports = router;

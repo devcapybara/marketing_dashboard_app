@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Header = () => {
+const Header = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
@@ -13,9 +13,10 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-64 right-0 h-16 bg-dark-card border-b border-dark-border flex items-center justify-between px-6 z-10">
-      <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold">
+    <header className="fixed top-0 left-0 md:left-64 right-0 h-14 md:h-16 bg-dark-card border-b border-dark-border flex items-center justify-between px-4 md:px-6 z-10">
+      <div className="flex items-center gap-3">
+        <button className="md:hidden btn-secondary px-3 py-2" onClick={onToggleSidebar}>☰</button>
+        <h2 className="text-base md:text-lg font-semibold">
           {user?.role === 'SUPER_ADMIN' && 'Super Admin Dashboard'}
           {user?.role === 'ADMIN' && 'Admin Dashboard'}
           {user?.role === 'CLIENT' && 'Client Dashboard'}

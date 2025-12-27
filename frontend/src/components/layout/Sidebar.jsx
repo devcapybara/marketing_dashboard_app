@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen = false, onClose }) => {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -67,11 +67,6 @@ const Sidebar = () => {
         name: 'Topups',
         path: '/topups',
         icon: '💰',
-      },
-      {
-        name: 'Custom Fields',
-        path: '/custom-fields',
-        icon: '⚙️',
       }
     );
 
@@ -81,7 +76,8 @@ const Sidebar = () => {
   const menuItems = getMenuItems();
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-dark-card border-r border-dark-border flex flex-col">
+    <>
+    <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-dark-card border-r border-dark-border flex-col z-40">
       <div className="p-6 border-b border-dark-border">
         <h1 className="text-xl font-bold">Marketing Dashboard</h1>
       </div>
@@ -113,6 +109,44 @@ const Sidebar = () => {
         </div>
       </div>
     </aside>
+    {mobileOpen && (
+      <>
+        <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+        <aside className="fixed left-0 top-0 h-full w-64 bg-dark-card border-r border-dark-border flex flex-col z-50">
+          <div className="p-6 border-b border-dark-border flex items-center justify-between">
+            <h1 className="text-xl font-bold">Marketing Dashboard</h1>
+            <button className="btn-secondary" onClick={onClose}>✕</button>
+          </div>
+          <nav className="flex-1 p-4">
+            <ul className="space-y-2">
+              {menuItems.map((item) => (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
+                      isActive(item.path)
+                        ? 'bg-primary text-white'
+                        : 'text-dark-text-muted hover:bg-dark-surface hover:text-dark-text'
+                    }`}
+                    onClick={onClose}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="font-medium">{item.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="p-4 border-t border-dark-border">
+            <div className="text-sm text-dark-text-muted">
+              <div className="font-medium text-dark-text">{user?.name}</div>
+              <div className="text-xs mt-1">{user?.role?.replace('_', ' ')}</div>
+            </div>
+          </div>
+        </aside>
+      </>
+    )}
+    </>
   );
 };
 

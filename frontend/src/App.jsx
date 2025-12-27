@@ -32,6 +32,8 @@ import PublicPage from './pages/site/PublicPage';
 import PageBuilder from './pages/site/PageBuilder';
 import UnauthorizedPage from './pages/auth/UnauthorizedPage';
 import LeadsPage from './pages/leads/LeadsPage';
+import LeadDetailPage from './pages/leads/LeadDetailPage';
+import EditLeadPage from './pages/leads/EditLeadPage';
 
 function App() {
   return (
@@ -235,13 +237,28 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Leads Management */}
           <Route
             path="/leads"
             element={
               <ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","CLIENT"]}>
                 <LeadsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads/:id"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","CLIENT"]}>
+                <LeadDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","CLIENT"]}>
+                <EditLeadPage />
               </ProtectedRoute>
             }
           />

@@ -2,7 +2,7 @@ const AdAccount = require('../../models/AdAccount');
 
 async function createAdAccountService(adAccountData) {
   try {
-    const { clientId, platform, accountName, accountId, currency } = adAccountData;
+    const { clientId, platform, accountName, accountId, currency, vatPercent } = adAccountData;
 
     const adAccount = new AdAccount({
       clientId,
@@ -10,6 +10,7 @@ async function createAdAccountService(adAccountData) {
       accountName,
       accountId,
       currency: currency || 'IDR',
+      vatPercent: typeof vatPercent === 'number' ? vatPercent : 11,
       isActive: true,
     });
 
