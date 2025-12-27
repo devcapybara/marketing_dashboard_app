@@ -4,8 +4,10 @@ async function listTopupsController(req, res, next) {
   try {
     const user = req.user;
     const { clientId, adAccountId, platform, dateFrom, dateTo } = req.query;
+    const page = parseInt(req.query.page || '1');
+    const limit = parseInt(req.query.limit || '25');
 
-    let filters = { adAccountId, platform, dateFrom, dateTo };
+    let filters = { adAccountId, platform, dateFrom, dateTo, page, limit };
 
     // Determine clientId based on user role
     if (user.role === 'CLIENT') {
@@ -35,7 +37,7 @@ async function listTopupsController(req, res, next) {
       }
     }
 
-    const topups = await listTopupsService(filters);
+    const { topups, total } = await listTopupsService(filters);
 
     // Filter by managedClientIds for ADMIN if no specific clientId
     if (user.role === 'ADMIN' && !clientId && user.managedClientIds.length > 0) {
@@ -46,6 +48,7 @@ async function listTopupsController(req, res, next) {
         success: true,
         message: 'Topups retrieved successfully',
         data: filteredTopups,
+        meta: { total, page, limit },
       });
     }
 
@@ -53,6 +56,7 @@ async function listTopupsController(req, res, next) {
       success: true,
       message: 'Topups retrieved successfully',
       data: topups,
+      meta: { total, page, limit },
     });
   } catch (error) {
     next(error);

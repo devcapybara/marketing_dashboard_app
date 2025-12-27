@@ -20,6 +20,7 @@ const CreateAdAccountPage = () => {
     accountId: '',
     currency: 'IDR',
     isActive: true,
+    vatPercent: 11,
   });
 
   useEffect(() => {
@@ -161,6 +162,24 @@ const CreateAdAccountPage = () => {
               required
               placeholder="Enter account ID"
             />
+          </div>
+
+          <div>
+            <label htmlFor="vatPercent" className="block text-sm font-medium mb-2">
+              PPN (%)
+            </label>
+            <input
+              id="vatPercent"
+              name="vatPercent"
+              type="number"
+              min="0"
+              max="100"
+              value={formData.vatPercent}
+              onChange={handleChange}
+              className="input w-full"
+              placeholder="11"
+            />
+            <p className="text-xs text-dark-text-muted mt-1">Default 11%. Digunakan untuk perhitungan saldo efektif.</p>
           </div>
 
           <div>

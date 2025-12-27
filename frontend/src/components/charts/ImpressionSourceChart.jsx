@@ -1,24 +1,39 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const ImpressionSourceChart = ({ data }) => {
-  // Transform data untuk chart
-  const chartData = [
-    {
-      name: 'Google Ads',
-      value: data?.googleAds || 0,
-      color: '#3B82F6', // Blue
-    },
-    {
-      name: 'Meta Ads',
-      value: data?.metaAds || 0,
-      color: '#EF4444', // Red
-    },
-    {
-      name: 'TikTok Ads',
-      value: data?.tiktokAds || 0,
-      color: '#F59E0B', // Yellow
-    },
-  ];
+  const platformLabel = (p) => {
+    if (p === 'GOOGLE') return 'Google Ads';
+    if (p === 'META') return 'Meta Ads';
+    if (p === 'TIKTOK') return 'TikTok Ads';
+    if (p === 'X') return 'X Ads';
+    if (p === 'LINKEDIN') return 'LinkedIn Ads';
+    if (p === 'OTHER') return 'Other';
+    return p || 'Unknown';
+  };
+  const platformColor = (p) => {
+    if (p === 'GOOGLE') return '#3B82F6';
+    if (p === 'META') return '#EF4444';
+    if (p === 'TIKTOK') return '#F59E0B';
+    if (p === 'X') return '#8B5CF6';
+    if (p === 'LINKEDIN') return '#0EA5E9';
+    if (p === 'OTHER') return '#10B981';
+    return '#6B7280';
+  };
+
+  let chartData = [];
+  if (Array.isArray(data)) {
+    chartData = data.map((pm) => ({
+      name: platformLabel(pm._id),
+      value: pm.impressions || 0,
+      color: platformColor(pm._id),
+    }));
+  } else {
+    chartData = [
+      { name: 'Google Ads', value: data?.googleAds || 0, color: '#3B82F6' },
+      { name: 'Meta Ads', value: data?.metaAds || 0, color: '#EF4444' },
+      { name: 'TikTok Ads', value: data?.tiktokAds || 0, color: '#F59E0B' },
+    ];
+  }
 
   return (
     <div className="card">
@@ -61,19 +76,13 @@ const ImpressionSourceChart = ({ data }) => {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <div className="mt-4 flex justify-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm text-dark-text-muted">Google Ads</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
-          <span className="text-sm text-dark-text-muted">Meta Ads</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-          <span className="text-sm text-dark-text-muted">TikTok Ads</span>
-        </div>
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
+        {chartData.map((c) => (
+          <div key={c.name} className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: c.color }}></div>
+            <span className="text-sm text-dark-text-muted">{c.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

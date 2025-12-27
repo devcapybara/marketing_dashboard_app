@@ -28,6 +28,12 @@ const adAccountSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    vatPercent: {
+      type: Number,
+      default: 11,
+      min: 0,
+      max: 100,
+    },
     isActive: {
       type: Boolean,
       default: true,

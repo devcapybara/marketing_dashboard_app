@@ -4,7 +4,7 @@ const getAdAccountByIdService = require('../../services/adAccount/getAdAccountBy
 async function updateAdAccountController(req, res, next) {
   try {
     const { id } = req.params;
-    const { platform, accountName, accountId, currency, isActive, clientId } = req.body;
+    const { platform, accountName, accountId, currency, isActive, clientId, vatPercent } = req.body;
     const user = req.user;
 
     // Fetch existing ad account for RBAC checks
@@ -58,6 +58,7 @@ async function updateAdAccountController(req, res, next) {
       accountId,
       currency,
       isActive,
+      vatPercent,
       // Only include clientId if provided (and valid by RBAC above)
       clientId,
     };

@@ -2,9 +2,9 @@ const getSuperAdminSummaryService = require('../../services/dashboard/getSuperAd
 
 async function getSuperAdminSummaryController(req, res, next) {
   try {
-    const { dateFrom, dateTo } = req.query;
+    const { dateFrom, dateTo, clientId, adminId } = req.query;
 
-    const filters = { dateFrom, dateTo };
+    const filters = { dateFrom, dateTo, clientId, adminId };
 
     const summary = await getSuperAdminSummaryService(filters);
 

@@ -2,7 +2,7 @@ const Topup = require('../../models/Topup');
 
 async function listTopupsService(filters = {}) {
   try {
-    const { clientId, adAccountId, platform, dateFrom, dateTo } = filters;
+    const { clientId, adAccountId, platform, dateFrom, dateTo, page = 1, limit = 25 } = filters;
 
     const query = {};
 
@@ -28,13 +28,17 @@ async function listTopupsService(filters = {}) {
       }
     }
 
+    const total = await Topup.countDocuments(query);
+    const skip = Math.max(0, (parseInt(page) - 1) * parseInt(limit));
     const topups = await Topup.find(query)
       .populate('clientId', 'name companyName')
       .populate('adAccountId', 'accountName accountId')
       .populate('createdBy', 'name email')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    return topups;
+    return { topups, total };
   } catch (error) {
     throw new Error('Failed to list topups');
   }

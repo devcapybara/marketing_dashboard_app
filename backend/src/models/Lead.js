@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const leadSchema = new mongoose.Schema(
   {
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
+    counter: { type: Number },
     name: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
     username: { type: String, trim: true },

@@ -2,13 +2,15 @@ import api from './api';
 
 export const topupService = {
   listTopups: async (filters = {}) => {
-    const { clientId, adAccountId, platform, dateFrom, dateTo } = filters;
+    const { clientId, adAccountId, platform, dateFrom, dateTo, page = 1, limit = 25 } = filters;
     const params = new URLSearchParams();
     if (clientId) params.append('clientId', clientId);
     if (adAccountId) params.append('adAccountId', adAccountId);
     if (platform) params.append('platform', platform);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
+    params.append('page', page);
+    params.append('limit', limit);
     
     const response = await api.get(`/api/topups?${params.toString()}`);
     return response.data;
