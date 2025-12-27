@@ -13,6 +13,7 @@ async function createDailyMetricService(metricData) {
       clicks,
       leads,
       notes,
+      customFields,
       createdBy,
     } = metricData;
 
@@ -26,6 +27,7 @@ async function createDailyMetricService(metricData) {
       impressions: impressions || 0,
       clicks: clicks || 0,
       leads: leads || 0,
+      customFields: customFields || {},
       notes,
       createdBy,
     });

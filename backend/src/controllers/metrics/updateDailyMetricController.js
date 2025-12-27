@@ -12,6 +12,7 @@ async function updateDailyMetricController(req, res, next) {
       clicks,
       leads,
       notes,
+      customFields,
     } = req.body;
 
     const metricData = {
@@ -23,6 +24,7 @@ async function updateDailyMetricController(req, res, next) {
       clicks,
       leads,
       notes,
+      customFields,
     };
 
     const updatedMetric = await updateDailyMetricService(id, metricData);

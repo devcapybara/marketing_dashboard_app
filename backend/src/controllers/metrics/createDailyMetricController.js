@@ -13,6 +13,7 @@ async function createDailyMetricController(req, res, next) {
       clicks,
       leads,
       notes,
+      customFields,
     } = req.body;
 
     const user = req.user;
@@ -53,6 +54,7 @@ async function createDailyMetricController(req, res, next) {
       clicks,
       leads,
       notes,
+      customFields,
       createdBy: user._id,
     };
 

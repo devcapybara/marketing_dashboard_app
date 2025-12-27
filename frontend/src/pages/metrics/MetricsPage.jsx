@@ -7,6 +7,7 @@ import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { clientService } from '../../services/clientService';
 import { adAccountService } from '../../services/adAccountService';
 import { useAuth } from '../../context/AuthContext';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const MetricsPage = () => {
   const [metrics, setMetrics] = useState([]);
@@ -36,17 +37,17 @@ const MetricsPage = () => {
     dateTo: '',
   });
   const [page, setPage] = useState(1);
-  const LIMIT = 25;
+  const [limit, setLimit] = useState(31);
   const [total, setTotal] = useState(0);
   const scrollRef = useRef(null);
   const cardRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [newMetric, setNewMetric] = useState({ date: '', platform: '', adAccountId: '', spend: '', revenue: '', impressions: '', clicks: '', leads: '' });
+  const [newMetric, setNewMetric] = useState({ date: '', platform: '', adAccountId: '', spend: '', revenue: '', impressions: '', clicks: '', leads: '', lpv: '' });
 
   useEffect(() => {
     fetchData();
-  }, [appliedFilters, page]);
+  }, [appliedFilters, page, limit]);
 
   useEffect(() => {
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
@@ -67,7 +68,7 @@ const MetricsPage = () => {
       if (appliedFilters.dateFrom) filterParams.dateFrom = appliedFilters.dateFrom;
       if (appliedFilters.dateTo) filterParams.dateTo = appliedFilters.dateTo;
 
-      const response = await metricsService.listDailyMetrics({ ...filterParams, page, limit: LIMIT });
+      const response = await metricsService.listDailyMetrics({ ...filterParams, page, limit });
       setMetrics(response.data || []);
       setTotal(response.meta?.total || (response.data?.length || 0));
     } catch (err) {
@@ -166,6 +167,13 @@ const MetricsPage = () => {
             <h1 className="text-3xl font-bold mb-2">Daily Metrics</h1>
             <p className="text-dark-text-muted">Kelola data performa iklan harian</p>
           </div>
+          <div className="flex items-end gap-3">
+            <button className="btn-secondary" onClick={()=>{ const csv = toCsv(['date','clientId','adAccountId','platform','spend','revenue','impressions','clicks','leads'], metrics); downloadCsv('metrics.csv', csv); }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const rows=await parseCsvFile(f); for(const r of rows){ try{ await metricsService.createDailyMetric({ clientId: r.clientId, adAccountId: r.adAccountId, platform: r.platform, date: r.date, spend: Number(r.spend||0), revenue: Number(r.revenue||0), impressions: Number(r.impressions||0), clicks: Number(r.clicks||0), leads: Number(r.leads||0) }); }catch{} } await fetchData(); e.target.value=''; }} />
+            </label>
+          </div>
         </div>
 
         {/* Filters */}
@@ -256,7 +264,7 @@ const MetricsPage = () => {
         {metrics.length > 0 ? (
           <div ref={cardRef} className="card overflow-hidden">
             <div ref={scrollRef} className="overflow-auto h-[70vh] no-x-scrollbar">
-            <table className="table-auto table-compact min-w-[1600px]">
+            <table className="table-auto table-compact min-w-[1800px]">
               <thead>
                 <tr className="border-b border-dark-border">
                   <th className="text-center p-2">No.</th>
@@ -270,8 +278,10 @@ const MetricsPage = () => {
                   <th className="text-center p-4 font-semibold">Revenue</th>
                   <th className="text-center p-4 font-semibold">Impressions</th>
                   <th className="text-center p-4 font-semibold">Clicks</th>
+                  <th className="text-center p-4 font-semibold">Landing Page View</th>
                   <th className="text-center p-4 font-semibold">Leads</th>
                   <th className="text-center p-4 font-semibold">CTR</th>
+                  <th className="text-center p-4 font-semibold">%LPV</th>
                   <th className="text-center p-4 font-semibold">CPL</th>
                   <th className="text-center p-4 font-semibold">ROAS</th>
                   <th className="text-center p-4 font-semibold">Actions</th>
@@ -279,7 +289,7 @@ const MetricsPage = () => {
               </thead>
               <tbody>
                 <tr className="border-t border-dark-border bg-dark-card">
-                  <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + metrics.length + 1}</td>
+                  <td className="p-2 text-center w-[80px]">{((page - 1) * limit) + metrics.length + 1}</td>
                   <td className="p-2"><input type="date" className="input w-full" value={newMetric.date} onChange={(e)=>setNewMetric((m)=>({...m,date:e.target.value}))} /></td>
                   <td className="p-2">
                     <select className="input w-full" value={newMetric.platform} onChange={(e)=>setNewMetric((m)=>({...m,platform:e.target.value}))}>
@@ -305,12 +315,21 @@ const MetricsPage = () => {
                   <td className="p-2"><input type="number" className="input w-full" value={newMetric.revenue} onChange={(e)=>setNewMetric((m)=>({...m,revenue:e.target.value}))} placeholder="0" /></td>
                   <td className="p-2"><input type="number" className="input w-full" value={newMetric.impressions} onChange={(e)=>setNewMetric((m)=>({...m,impressions:e.target.value}))} placeholder="0" /></td>
                   <td className="p-2"><input type="number" className="input w-full" value={newMetric.clicks} onChange={(e)=>setNewMetric((m)=>({...m,clicks:e.target.value}))} placeholder="0" /></td>
+                  <td className="p-2"><input type="number" className="input w-full" value={newMetric.lpv} onChange={(e)=>setNewMetric((m)=>({...m,lpv:e.target.value}))} placeholder="0" /></td>
                   <td className="p-2"><input type="number" className="input w-full" value={newMetric.leads} onChange={(e)=>setNewMetric((m)=>({...m,leads:e.target.value}))} placeholder="0" /></td>
                   <td className="p-2 text-center text-dark-text-muted">
                       {(() => {
                         const imp = Number(newMetric.impressions||0);
                         const clk = Number(newMetric.clicks||0);
                         const val = imp>0 ? (clk/imp)*100 : 0;
+                        return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + '%';
+                      })()}
+                  </td>
+                  <td className="p-2 text-center text-dark-text-muted">
+                      {(() => {
+                        const clk = Number(newMetric.clicks||0);
+                        const lpv = Number(newMetric.lpv||0);
+                        const val = clk>0 ? (lpv/clk)*100 : 0;
                         return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + '%';
                       })()}
                   </td>
@@ -342,6 +361,7 @@ const MetricsPage = () => {
                         impressions: Number(newMetric.impressions||0),
                         clicks: Number(newMetric.clicks||0),
                         leads: Number(newMetric.leads||0),
+                        customFields: { landingPageView: Number(newMetric.lpv||0) },
                       };
                       await metricsService.createDailyMetric(payload);
                       setNewMetric({ date: '', platform: '', adAccountId: '', spend: '', revenue: '', impressions: '', clicks: '', leads: '' });
@@ -352,10 +372,12 @@ const MetricsPage = () => {
                 {metrics.map((metric, i) => {
                   const roas = metric.spend > 0 ? (metric.revenue / metric.spend) : 0;
                   const ctr = metric.impressions > 0 ? ((metric.clicks / metric.impressions) * 100) : 0;
+                  const lpv = Number(metric.customFields?.landingPageView || 0);
+                  const lpvPercent = metric.clicks > 0 ? (lpv / metric.clicks) * 100 : 0;
                   const cpl = metric.leads > 0 ? (metric.spend / metric.leads) : 0;
                   return (
                     <tr key={metric._id} className="border-b border-dark-border hover:bg-dark-surface">
-                      <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + i + 1}</td>
+                      <td className="p-2 text-center w-[80px]">{((page - 1) * limit) + i + 1}</td>
                       <td className="p-4 text-center">
                         {new Date(metric.date).toLocaleDateString('id-ID')}
                       </td>
@@ -379,6 +401,12 @@ const MetricsPage = () => {
                       </td>
                       <td className="p-4 text-center text-dark-text-muted">
                         {formatNumber(metric.clicks)}
+                      </td>
+                      <td className="p-4 text-center text-dark-text-muted">
+                        {formatNumber(lpv)}
+                      </td>
+                      <td className="p-4 text-center text-dark-text-muted">
+                        {new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(lpvPercent)}%
                       </td>
                       <td className="p-4 text-center text-dark-text-muted">
                         {formatNumber(metric.leads)}
@@ -423,19 +451,55 @@ const MetricsPage = () => {
                     </tr>
                   );
                 })}
+                {metrics.length > 0 && (()=>{
+                  const totalSpend = metrics.reduce((s,m)=>s + (Number(m.spend||0)), 0);
+                  const totalRevenue = metrics.reduce((s,m)=>s + (Number(m.revenue||0)), 0);
+                  const totalImpressions = metrics.reduce((s,m)=>s + (Number(m.impressions||0)), 0);
+                  const totalClicks = metrics.reduce((s,m)=>s + (Number(m.clicks||0)), 0);
+                  const totalLeads = metrics.reduce((s,m)=>s + (Number(m.leads||0)), 0);
+                  const totalLpv = metrics.reduce((s,m)=>s + (Number(m.customFields?.landingPageView||0)), 0);
+                  const ctrTotal = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+                  const cplTotal = totalLeads > 0 ? (totalSpend / totalLeads) : 0;
+                  const roasTotal = totalSpend > 0 ? (totalRevenue / totalSpend) : 0;
+                  const preCols = (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') ? 5 : 4;
+                  return (
+                    <tr className="border-t border-dark-border bg-dark-card">
+                      <td className="p-4 text-right font-semibold" colSpan={preCols}>Total (page)</td>
+                      <td className="p-4 text-center font-semibold">{formatCurrency(totalSpend)}</td>
+                      <td className="p-4 text-center font-semibold">{formatCurrency(totalRevenue)}</td>
+                      <td className="p-4 text-center font-semibold">{formatNumber(totalImpressions)}</td>
+                      <td className="p-4 text-center font-semibold">{formatNumber(totalClicks)}</td>
+                      <td className="p-4 text-center font-semibold">{formatNumber(totalLpv)}</td>
+                      <td className="p-4 text-center font-semibold">{formatNumber(totalLeads)}</td>
+                      <td className="p-4 text-center font-semibold">{new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ctrTotal)}%</td>
+                      <td className="p-4 text-center font-semibold">{new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalClicks>0 ? (totalLpv/totalClicks)*100 : 0)}%</td>
+                      <td className="p-4 text-center font-semibold">{formatCurrency(cplTotal)}</td>
+                      <td className="p-4 text-center font-semibold">{new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(roasTotal)}x</td>
+                      <td className="p-4" />
+                    </tr>
+                  );
+                })()}
               </tbody>
             </table>
+            <BottomScrollSync forRef={scrollRef} />
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); }}>
+                <option value="7">7</option>
+                <option value="14">14</option>
+                <option value="31">31</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+              </select>
               <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
-              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
-              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / limit))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/limit)} onClick={()=>setPage((p)=>p+1)}>Next</button>
             </div>
-            <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
+            
           </div>
         ) : (
           <div ref={cardRef} className="card overflow-hidden">
-            <div ref={scrollRef} className="overflow-auto h-[70vh] no-x-scrollbar">
+            <div ref={scrollRef} className="overflow-auto h-[70vh] no-x-scrollbar relative">
               <table className="table-auto table-compact min-w-[1600px]">
                 <thead>
                   <tr className="border-b border-dark-border">
@@ -533,13 +597,21 @@ const MetricsPage = () => {
                   </tr>
                 </tbody>
               </table>
+              <BottomScrollSync forRef={scrollRef} />
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); }}>
+                <option value="7">7</option>
+                <option value="14">14</option>
+                <option value="31">31</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+              </select>
               <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
-              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
-              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / limit))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/limit)} onClick={()=>setPage((p)=>p+1)}>Next</button>
             </div>
-            <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
+            
           </div>
         )}
       </div>

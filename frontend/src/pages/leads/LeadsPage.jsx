@@ -8,6 +8,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import DropdownEditor from '../../components/common/DropdownEditor';
 import BottomScrollSync from '../../components/common/BottomScrollSync';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const DEFAULT_STATUS = ['Tidak ada balasan','Masih tanya-tanya','Potensial','Closing','Retensi'];
 const DEFAULT_SOURCE = ['Google Ads','TikTok Ads','Facebook','Instagram','Teman','Pelanggan Lama','Organik'];
@@ -24,7 +25,7 @@ const LeadsPage = () => {
   const [newLead, setNewLead] = useState({ name: '', phone: '', username: '', csPic: '', source: '', address: '', notes: '', status: '', followUp1: '', followUp2: '', followUp3: '', followUp4: '', followUp5: '' });
   const scrollRef = useRef(null);
   const cardRef = useRef(null);
-  const LIMIT = 25;
+  const [limit, setLimit] = useState(31);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
@@ -45,7 +46,7 @@ const LeadsPage = () => {
         const activeClientId = user?.role === 'CLIENT' ? user?.clientId : clientId;
         if (activeClientId) {
           const [leadsRes, clientRes] = await Promise.all([
-            leadService.list(activeClientId, page, LIMIT, search),
+            leadService.list(activeClientId, page, limit, search),
             clientService.getClientById(activeClientId),
           ]);
           setLeads(leadsRes?.data || []);
@@ -59,10 +60,10 @@ const LeadsPage = () => {
       }
     };
     init();
-  }, [user?.role, user?.clientId, clientId, page]);
+  }, [user?.role, user?.clientId, clientId, page, limit]);
 
   const refreshLeads = async () => {
-    const res = await leadService.list(clientId || user?.clientId, page, LIMIT, search);
+    const res = await leadService.list(clientId || user?.clientId, page, limit, search);
     setLeads(res?.data || []);
     setTotal(res?.meta?.total || 0);
   };
@@ -133,11 +134,33 @@ const LeadsPage = () => {
             />
             <button className="btn-secondary" onClick={()=>{ setPage(1); refreshLeads(); }}>Cari</button>
             <button className="btn-secondary" onClick={()=>{ setSearch(''); setPage(1); refreshLeads(); }}>Reset</button>
+            <button className="btn-secondary" onClick={()=>{
+              const csv = toCsv(['createdAt','name','phone','username','csPic','source','address','notes','status','followUp1','followUp2','followUp3','followUp4','followUp5'], leads);
+              downloadCsv('leads.csv', csv);
+            }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{
+                const file = e.target.files?.[0]; if (!file) return;
+                const rows = await parseCsvFile(file);
+                for (const r of rows) {
+                  try {
+                    await leadService.create({
+                      clientId: clientId || user?.clientId,
+                      name: r.name||'', phone: r.phone||'', username: r.username||'', csPic: r.csPic||'', source: r.source||'', address: r.address||'', notes: r.notes||'', status: r.status||'',
+                      followUp1: r.followUp1||null, followUp2: r.followUp2||null, followUp3: r.followUp3||null, followUp4: r.followUp4||null, followUp5: r.followUp5||null,
+                    });
+                  } catch {}
+                }
+                await refreshLeads();
+                e.target.value = '';
+              }} />
+            </label>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4">
           <div ref={cardRef} className="card min-h-[70vh] overflow-hidden">
-            <div ref={scrollRef} className="overflow-x-auto no-x-scrollbar">
+            <div ref={scrollRef} className="overflow-x-auto no-x-scrollbar relative">
               <table className="table-auto table-compact min-w-[1760px]">
                 <thead>
                   <tr className="text-left">
@@ -171,7 +194,7 @@ const LeadsPage = () => {
                         options={csPicOptions}
                         value={newLead.csPic || ''}
                         onChange={(v)=>setNewLead({...newLead,csPic:v})}
-                        canDelete={()=>!!newLead.csPic}
+                        canDelete={(label)=>!!label}
                         onCreate={async (label)=>{
                           const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
                           const next = [...csPicOptions, label];
@@ -258,7 +281,7 @@ const LeadsPage = () => {
                   ) : (
                     leads.map((l, i) => (
                       <tr key={l._id} className="border-t border-dark-border bg-dark-surface/60 cursor-pointer hover:bg-dark-card" onClick={()=>navigate(`/leads/${l._id}`)}>
-                        <td className="px-4 py-2 w-[80px] text-center">{l.counter ?? ((page - 1) * LIMIT + i + 1)}</td>
+                    <td className="px-4 py-2 w-[80px] text-center">{l.counter ?? ((page - 1) * limit + i + 1)}</td>
                         <td className="px-4 py-2 w-[140px]">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('id-ID') : '-'}</td>
                         <td className="px-4 py-2">{l.name || '-'}</td>
                         <td className="px-4 py-2">{l.phone || '-'}</td>
@@ -278,13 +301,21 @@ const LeadsPage = () => {
                   )}
                 </tbody>
               </table>
+              <BottomScrollSync forRef={scrollRef} />
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); refreshLeads(); }}>
+                <option value="7">7</option>
+                <option value="14">14</option>
+                <option value="31">31</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+              </select>
               <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
-              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
-              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / limit))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/limit)} onClick={()=>setPage((p)=>p+1)}>Next</button>
             </div>
-            <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
+            
           </div>
         </div>
       </div>

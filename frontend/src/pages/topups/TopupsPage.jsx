@@ -7,6 +7,7 @@ import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { clientService } from '../../services/clientService';
 import { adAccountService } from '../../services/adAccountService';
 import { useAuth } from '../../context/AuthContext';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const TopupsPage = () => {
   const [topups, setTopups] = useState([]);
@@ -24,7 +25,7 @@ const TopupsPage = () => {
   const [filterDraft, setFilterDraft] = useState({ clientId:'', adAccountId:'', platform:'', dateFrom:'', dateTo:'' });
   const [appliedFilters, setAppliedFilters] = useState({ clientId:'', adAccountId:'', platform:'', dateFrom:'', dateTo:'' });
   const [page, setPage] = useState(1);
-  const LIMIT = 25;
+  const [limit, setLimit] = useState(31);
   const [total, setTotal] = useState(0);
   const scrollRef = useRef(null);
   const cardRef = useRef(null);
@@ -34,7 +35,7 @@ const TopupsPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [appliedFilters, page]);
+  }, [appliedFilters, page, limit]);
 
   useEffect(() => {
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
@@ -55,7 +56,7 @@ const TopupsPage = () => {
       if (appliedFilters.dateFrom) filterParams.dateFrom = appliedFilters.dateFrom;
       if (appliedFilters.dateTo) filterParams.dateTo = appliedFilters.dateTo;
 
-      const response = await topupService.listTopups({ ...filterParams, page, limit: LIMIT });
+      const response = await topupService.listTopups({ ...filterParams, page, limit });
       setTopups(response.data || []);
       setTotal(response.meta?.total || (response.data?.length || 0));
     } catch (err) {
@@ -162,9 +163,15 @@ const TopupsPage = () => {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Topups</h1>
-            <p className="text-dark-text-muted">Kelola data top-up akun iklan</p>
+            <p className="text-dark-text-muted">Kelola topup iklan</p>
           </div>
-          
+          <div className="flex items-end gap-3">
+            <button className="btn-secondary" onClick={()=>{ const csv=toCsv(['date','clientId','adAccountId','platform','amount','paymentMethod','receiptUrl','notes'], topups); downloadCsv('topups.csv', csv); }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const rows=await parseCsvFile(f); for(const r of rows){ try{ await topupService.createTopup({ clientId:r.clientId, adAccountId:r.adAccountId, platform:r.platform, date:r.date, amount:Number(r.amount||0), paymentMethod:r.paymentMethod||'OTHER', receiptUrl:r.receiptUrl||'', notes:r.notes||'' }); }catch{} } await fetchData(); e.target.value=''; }} />
+            </label>
+          </div>
         </div>
 
         {/* Filters */}
@@ -273,7 +280,7 @@ const TopupsPage = () => {
               </thead>
               <tbody>
                 <tr className="border-t border-dark-border bg-dark-card">
-                  <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + topups.length + 1}</td>
+                  <td className="p-2 text-center w-[80px]">{((page - 1) * limit) + topups.length + 1}</td>
                   <td className="p-2"><input type="date" className="input w-full" value={newTopup.date} onChange={(e)=>setNewTopup((t)=>({...t,date:e.target.value}))} /></td>
                   <td className="p-2">
                     <select className="input w-full" value={newTopup.platform} onChange={(e)=>setNewTopup((t)=>({...t,platform:e.target.value}))}>
@@ -325,7 +332,7 @@ const TopupsPage = () => {
                 </tr>
                 {topups.map((topup, i) => (
                   <tr key={topup._id} className="border-b border-dark-border hover:bg-dark-surface">
-                    <td className="p-2 text-center w-[80px]">{((page - 1) * LIMIT) + i + 1}</td>
+                    <td className="p-2 text-center w-[80px]">{((page - 1) * limit) + i + 1}</td>
                     <td className="p-4 text-center">
                       {new Date(topup.date).toLocaleDateString('id-ID')}
                     </td>
@@ -390,9 +397,16 @@ const TopupsPage = () => {
             </table>
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); }}>
+                <option value="7">7</option>
+                <option value="14">14</option>
+                <option value="31">31</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+              </select>
               <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
-              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
-              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / limit))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/limit)} onClick={()=>setPage((p)=>p+1)}>Next</button>
             </div>
             <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
           </div>
@@ -474,9 +488,16 @@ const TopupsPage = () => {
               </table>
             </div>
             <div className="flex items-center justify-end gap-2 px-4 py-2">
+              <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); }}>
+                <option value="7">7</option>
+                <option value="14">14</option>
+                <option value="31">31</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+              </select>
               <button className="btn-secondary" disabled={page<=1} onClick={()=>setPage((p)=>Math.max(1,p-1))}>Prev</button>
-              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / LIMIT))}</span>
-              <button className="btn-secondary" disabled={page>=Math.ceil(total/LIMIT)} onClick={()=>setPage((p)=>p+1)}>Next</button>
+              <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(total / limit))}</span>
+              <button className="btn-secondary" disabled={page>=Math.ceil(total/limit)} onClick={()=>setPage((p)=>p+1)}>Next</button>
             </div>
             <BottomScrollSync forRef={scrollRef} containerRef={cardRef} />
           </div>
