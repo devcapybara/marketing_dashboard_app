@@ -67,6 +67,11 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
         name: 'Topups',
         path: '/topups',
         icon: '💰',
+      },
+      {
+        name: 'Calculator',
+        path: '/calculator',
+        icon: '🧮',
       }
     );
 

@@ -35,6 +35,9 @@ import UnauthorizedPage from './pages/auth/UnauthorizedPage';
 import LeadsPage from './pages/leads/LeadsPage';
 import LeadDetailPage from './pages/leads/LeadDetailPage';
 import EditLeadPage from './pages/leads/EditLeadPage';
+import CalculatorPage from './pages/tools/CalculatorPage';
+import CalculatorDetailPage from './pages/tools/CalculatorDetailPage';
+import EditCalculatorPage from './pages/tools/EditCalculatorPage';
 
 function App() {
   return (
@@ -177,6 +180,31 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'CLIENT']}>
                 <TopupsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Calculator */}
+          <Route
+            path="/calculator"
+            element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'CLIENT']}>
+                <CalculatorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calculator/:id"
+            element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'CLIENT']}>
+                <CalculatorDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calculator/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'CLIENT']}>
+                <EditCalculatorPage />
               </ProtectedRoute>
             }
           />
