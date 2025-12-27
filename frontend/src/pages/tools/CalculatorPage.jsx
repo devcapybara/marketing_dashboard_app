@@ -3,6 +3,8 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const presets = {
   JASA: { marketingMin: 5, marketingMax: 15 },
@@ -210,20 +212,14 @@ const CalculatorPage = () => {
     try { localStorage.setItem('calculator_cta_url', ctaUrl || ''); alert('CTA URL disimpan'); } catch {}
   };
 
-  const loadSaved = () => {
-    try { const v = JSON.parse(localStorage.getItem('calculator_saves') || '[]'); setSaved(Array.isArray(v)?v:[]); } catch { setSaved([]); }
-  };
-  const persistSaved = (list) => {
-    setSaved(list);
-    try { localStorage.setItem('calculator_saves', JSON.stringify(list)); } catch {}
+  const loadSaved = async () => {
+    try { const res = await api.get('/api/calculator-saves'); setSaved(res?.data?.data || []); } catch { setSaved([]); }
   };
   useEffect(()=>{ loadCtaUrl(); loadSaved(); }, []);
 
-  const saveCurrent = () => {
+  const saveCurrent = async () => {
     const baseCost = businessType==='JASA' ? (Number(manpowerWage||0)+Number(operationalCost||0)+Number(toolsCost||0)) : Number(hpp||0);
     const item = {
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
       productName,
       businessType,
       hpp: baseCost,
@@ -249,9 +245,7 @@ const CalculatorPage = () => {
       estimatedSales: scaleSim.sales,
       estimatedProfit: scaleSim.profit,
     };
-    const next = [item, ...saved];
-    persistSaved(next);
-    alert('Simulasi disimpan');
+    try { const res = await api.post('/api/calculator-saves', item); const savedItem = res?.data?.data || null; if (savedItem) setSaved((prev)=>[savedItem, ...prev]); alert('Simulasi disimpan'); } catch(e){ alert(e?.response?.data?.message || 'Gagal menyimpan simulasi'); }
   };
 
   return (
@@ -326,6 +320,37 @@ const CalculatorPage = () => {
               <div>
                 <label className="block text-sm mb-2">Simulasi Skala Iklan — Budget</label>
                 <input type="number" className="input w-full" value={scaleBudget} onChange={(e)=>setScaleBudget(e.target.value)} />
+              </div>
+              <div className="mt-3">
+                <div className="font-semibold mb-2">Slider Sensitivitas</div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm mb-2">Marketing (%)</label>
+                    <input type="range" className="w-full" min={0} max={60} step={1} value={marketingPercent} onChange={(e)=>setMarketingPercent(e.target.value)} />
+                    <div className="text-xs mt-1">{new Intl.NumberFormat('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Number(marketingPercent||0))}%</div>
+                  </div>
+                  {businessType !== 'PRODUK_DIGITAL' && (
+                    <div>
+                      <label className="block text-sm mb-2">Target Net Profit (%)</label>
+                      <input type="range" className="w-full" min={0} max={60} step={1} value={profitPercent} onChange={(e)=>setProfitPercent(e.target.value)} />
+                      <div className="text-xs mt-1">{new Intl.NumberFormat('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Number(profitPercent||0))}%</div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm mb-2">Admin {adminType==='PERCENT' ? '(%)' : '(Rp)'}</label>
+                    {adminType==='PERCENT' ? (
+                      <>
+                        <input type="range" className="w-full" min={0} max={20} step={1} value={adminValue} onChange={(e)=>setAdminValue(e.target.value)} />
+                        <div className="text-xs mt-1">{new Intl.NumberFormat('id-ID',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Number(adminValue||0))}%</div>
+                      </>
+                    ) : (
+                      <>
+                        <input type="range" className="w-full" min={0} max={200000} step={1000} value={adminValue} onChange={(e)=>setAdminValue(e.target.value)} />
+                        <div className="text-xs mt-1">{new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(adminValue||0))}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -439,7 +464,7 @@ const CalculatorPage = () => {
               </thead>
               <tbody>
                 {saved.slice((page-1)*limit, (page-1)*limit + limit).map((s, idx) => (
-                  <tr key={s.id} className="border-b border-dark-border hover:bg-dark-surface">
+                  <tr key={s._id || s.id} className="border-b border-dark-border hover:bg-dark-surface">
                     <td className="p-2 text-center w-[80px]">{((page-1)*limit) + idx + 1}</td>
                     <td className="p-4 text-center">{new Date(s.createdAt).toLocaleDateString('id-ID')}</td>
                     <td className="p-4 text-center text-dark-text-muted">{s.productName || '-'}</td>
@@ -461,8 +486,8 @@ const CalculatorPage = () => {
                     <td className="p-4 text-center">{formatCurrency(s.estimatedProfit)}</td>
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>navigate(`/calculator/${s.id}`)}>View</button>
-                        <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>navigate(`/calculator/${s.id}/edit`)}>Edit</button>
+                        <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>navigate(`/calculator/${s._id || s.id}`)}>View</button>
+                        <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>navigate(`/calculator/${s._id || s.id}/edit`)}>Edit</button>
                         <button className="text-red-400 hover:text-red-300 text-sm" onClick={()=>{
                           if (!window.confirm('Hapus simulasi ini?')) return;
                           const next = saved.filter((x)=>x.id!==s.id);
@@ -482,6 +507,11 @@ const CalculatorPage = () => {
             <BottomScrollSync forRef={scrollRef} />
           </div>
           <div className="flex items-center justify-end gap-2 px-4 py-2">
+            <button className="btn-secondary" onClick={()=>{ const csv = toCsv(['createdAt','productName','businessType','hpp','marketingPercent','profitPercent','adminType','adminValue','discountPercent','scaleBudget','affiliatePercent','targetNetIncome','price','bep','marketingBudget','cpaMax','roasTarget','priceAfterDiscount','netProfitAfterDiscount','estimatedOmset','estimatedSales','estimatedProfit','notes'], saved); downloadCsv('calculator_saves.csv', csv); }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const rows=await parseCsvFile(f); for(const r of rows){ try{ const res = await api.post('/api/calculator-saves', { productName:r.productName, businessType:r.businessType, hpp:Number(r.hpp||0), marketingPercent:Number(r.marketingPercent||0), profitPercent:Number(r.profitPercent||0), adminType:r.adminType||'PERCENT', adminValue:Number(r.adminValue||0), discountPercent:Number(r.discountPercent||0), scaleBudget:Number(r.scaleBudget||0), affiliatePercent:Number(r.affiliatePercent||0), targetNetIncome:Number(r.targetNetIncome||0), price:Number(r.price||0), bep:Number(r.bep||0), marketingBudget:Number(r.marketingBudget||0), cpaMax:Number(r.cpaMax||0), roasTarget:Number(r.roasTarget||0), priceAfterDiscount:Number(r.priceAfterDiscount||0), netProfitAfterDiscount:Number(r.netProfitAfterDiscount||0), estimatedOmset:Number(r.estimatedOmset||0), estimatedSales:Number(r.estimatedSales||0), estimatedProfit:Number(r.estimatedProfit||0), notes:r.notes||'' }); const item=res?.data?.data; if(item) setSaved((prev)=>[item,...prev]); }catch{} } e.target.value=''; }} />
+            </label>
             <select className="input w-24" value={limit} onChange={(e)=>{ setLimit(Number(e.target.value)); setPage(1); }}>
               <option value="7">7</option>
               <option value="14">14</option>

@@ -49,16 +49,10 @@ const LeadDetailPage = () => {
       }
     };
     fetchDetail();
-    try {
-      const v = JSON.parse(localStorage.getItem(`lead_transactions_${id}`) || '[]');
-      setTransactions(Array.isArray(v) ? v : []);
-    } catch {}
+    (async ()=>{ try { const txRes = await api.get(`/api/leads/${id}/transactions`); setTransactions(txRes?.data?.data || []); } catch { setTransactions([]); } })();
   }, [id]);
 
-  const persistTx = (list) => {
-    setTransactions(list);
-    try { localStorage.setItem(`lead_transactions_${id}`, JSON.stringify(list)); } catch {}
-  };
+  const persistTx = (list) => { setTransactions(list); };
 
   const formatCurrency = (v) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(v||0));
 
@@ -171,7 +165,7 @@ const LeadDetailPage = () => {
                   </td>
                   <td className="p-2"><input className="input w-full" value={newTx.attachment} onChange={(e)=>setNewTx((t)=>({...t,attachment:e.target.value}))} placeholder="Link lampiran (opsional)" /></td>
                   <td className="p-2">
-                    <button className="btn-primary" onClick={()=>{ const item={ id: Date.now(), date:newTx.date, product:newTx.product, amount:Number(newTx.amount||0), paymentMethod:newTx.paymentMethod, attachment:newTx.attachment }; const next=[item,...transactions]; persistTx(next); setNewTx({ date:'', product:'', amount:'', paymentMethod:'', attachment:'' }); }}>Simpan</button>
+                    <button className="btn-primary" onClick={async()=>{ try { const res = await api.post(`/api/leads/${id}/transactions`, { date:newTx.date, product:newTx.product, amount:Number(newTx.amount||0), paymentMethod:newTx.paymentMethod, attachment:newTx.attachment }); const item = res?.data?.data; setTransactions((prev)=>[item,...prev]); setNewTx({ date:'', product:'', amount:'', paymentMethod:'', attachment:'' }); } catch(e){ alert(e?.response?.data?.message || 'Gagal menyimpan transaksi'); } }}>Simpan</button>
                   </td>
                 </tr>
                 {transactions.length===0 && (
@@ -190,7 +184,7 @@ const LeadDetailPage = () => {
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-end gap-2">
                         <button className="text-primary hover:text-primary-hover text-sm" onClick={()=>alert(JSON.stringify(tx,null,2))}>View</button>
-                        <button className="text-red-400 hover:text-red-300 text-sm" onClick={()=>{ const next=transactions.filter((t)=>t.id!==tx.id); persistTx(next); }}>Delete</button>
+                        <button className="text-red-400 hover:text-red-300 text-sm" onClick={async()=>{ try { await api.delete(`/api/leads/${id}/transactions/${tx._id || tx.id}`); setTransactions((prev)=>prev.filter((t)=> (t._id||t.id)!==(tx._id||tx.id))); } catch(e){ alert(e?.response?.data?.message || 'Gagal menghapus transaksi'); } }}>Delete</button>
                       </div>
                     </td>
                   </tr>

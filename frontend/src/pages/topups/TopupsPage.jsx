@@ -7,6 +7,7 @@ import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { clientService } from '../../services/clientService';
 import { adAccountService } from '../../services/adAccountService';
 import { useAuth } from '../../context/AuthContext';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const TopupsPage = () => {
   const [topups, setTopups] = useState([]);
@@ -162,9 +163,15 @@ const TopupsPage = () => {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Topups</h1>
-            <p className="text-dark-text-muted">Kelola data top-up akun iklan</p>
+            <p className="text-dark-text-muted">Kelola topup iklan</p>
           </div>
-          
+          <div className="flex items-end gap-3">
+            <button className="btn-secondary" onClick={()=>{ const csv=toCsv(['date','clientId','adAccountId','platform','amount','paymentMethod','receiptUrl','notes'], topups); downloadCsv('topups.csv', csv); }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const rows=await parseCsvFile(f); for(const r of rows){ try{ await topupService.createTopup({ clientId:r.clientId, adAccountId:r.adAccountId, platform:r.platform, date:r.date, amount:Number(r.amount||0), paymentMethod:r.paymentMethod||'OTHER', receiptUrl:r.receiptUrl||'', notes:r.notes||'' }); }catch{} } await fetchData(); e.target.value=''; }} />
+            </label>
+          </div>
         </div>
 
         {/* Filters */}

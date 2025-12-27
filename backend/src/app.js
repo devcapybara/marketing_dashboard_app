@@ -17,6 +17,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const customMetricFieldRoutes = require('./routes/customMetricFieldRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 const leadRoutes = require('./routes/leadRoutes');
+const leadTransactionRoutes = require('./routes/leadTransactionRoutes');
+const calculatorRoutes = require('./routes/calculatorRoutes');
 
 // Import error handler
 const errorHandler = require('./middleware/errorHandler');
@@ -45,6 +47,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/custom-metric-fields', customMetricFieldRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api', leadTransactionRoutes);
+app.use('/api/calculator-saves', calculatorRoutes);
 
 // Error handler middleware (must be last)
 app.use(errorHandler);

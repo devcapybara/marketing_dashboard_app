@@ -24,5 +24,7 @@ function errorResponse(message = 'Error', statusCode = 400, errors = null) {
 module.exports = {
   successResponse,
   errorResponse,
+  success: successResponse,
+  error: errorResponse,
 };
 

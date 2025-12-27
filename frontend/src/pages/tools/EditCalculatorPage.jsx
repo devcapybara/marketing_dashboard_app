@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import api from '../../services/api';
 
 function percentToDecimal(p){ return Math.max(0, Math.min(100, Number(p||0))) / 100; }
 const formatCurrency = (v) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(v||0);
@@ -12,12 +13,7 @@ const EditCalculatorPage = () => {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    try {
-      const list = JSON.parse(localStorage.getItem('calculator_saves') || '[]');
-      const found = list.find((x) => String(x.id) === String(id));
-      setData(found || null);
-      setNotes(found?.notes || '');
-    } catch { setData(null); }
+    (async ()=>{ try { const res = await api.get(`/api/calculator-saves/${id}`); const found = res?.data?.data || null; setData(found); setNotes(found?.notes || ''); } catch { setData(null); } })();
   }, [id]);
 
   if (!data) {
@@ -30,7 +26,7 @@ const EditCalculatorPage = () => {
     );
   }
 
-  const save = () => {
+  const save = async () => {
     const m = percentToDecimal(data.marketingPercent);
     const adminP = data.adminType==='PERCENT' ? percentToDecimal(data.adminValue) : 0;
     const adminFixed = data.adminType==='FIXED' ? Number(data.adminValue||0) : 0;
@@ -66,22 +62,10 @@ const EditCalculatorPage = () => {
       : (priceAfterDiscount - (Number(data.hpp||0) + priceAfterDiscount*m + priceAfterDiscount*adminP + adminFixed));
 
     try {
-      const list = JSON.parse(localStorage.getItem('calculator_saves') || '[]');
-      const next = list.map((x)=> String(x.id)===String(id) ? {
-        ...data,
-        price,
-        bep,
-        marketingBudget,
-        cpaMax,
-        roasTarget,
-        priceAfterDiscount,
-        netProfitAfterDiscount,
-        notes,
-      } : x);
-      localStorage.setItem('calculator_saves', JSON.stringify(next));
+      await api.put(`/api/calculator-saves/${id}`, { ...data, price, bep, marketingBudget, cpaMax, roasTarget, priceAfterDiscount, netProfitAfterDiscount, notes });
       alert('Perubahan disimpan');
       navigate(`/calculator/${id}`);
-    } catch {}
+    } catch(e){ alert(e?.response?.data?.message || 'Gagal menyimpan'); }
   };
 
   return (

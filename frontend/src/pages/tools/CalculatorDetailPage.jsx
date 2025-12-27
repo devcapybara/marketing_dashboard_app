@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import api from '../../services/api';
 
 const formatCurrency = (v) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(v||0);
 const formatPercent = (v) => `${new Intl.NumberFormat('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0)}%`;
@@ -12,23 +13,13 @@ const CalculatorDetailPage = () => {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    try {
-      const list = JSON.parse(localStorage.getItem('calculator_saves') || '[]');
-      const found = list.find((x) => String(x.id) === String(id));
-      setItem(found || null);
-      setNotes(found?.notes || '');
-    } catch {
-      setItem(null);
-    }
+    (async ()=>{
+      try { const res = await api.get(`/api/calculator-saves/${id}`); const found = res?.data?.data || null; setItem(found); setNotes(found?.notes || ''); } catch { setItem(null); }
+    })();
   }, [id]);
 
-  const saveNotes = () => {
-    try {
-      const list = JSON.parse(localStorage.getItem('calculator_saves') || '[]');
-      const next = list.map((x) => (String(x.id) === String(id) ? { ...x, notes } : x));
-      localStorage.setItem('calculator_saves', JSON.stringify(next));
-      alert('Perubahan disimpan');
-    } catch {}
+  const saveNotes = async () => {
+    try { await api.put(`/api/calculator-saves/${id}`, { notes }); alert('Perubahan disimpan'); } catch(e) { alert(e?.response?.data?.message || 'Gagal menyimpan'); }
   };
 
   if (!item) {

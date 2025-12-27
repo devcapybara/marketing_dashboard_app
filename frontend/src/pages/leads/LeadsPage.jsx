@@ -8,6 +8,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import DropdownEditor from '../../components/common/DropdownEditor';
 import BottomScrollSync from '../../components/common/BottomScrollSync';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const DEFAULT_STATUS = ['Tidak ada balasan','Masih tanya-tanya','Potensial','Closing','Retensi'];
 const DEFAULT_SOURCE = ['Google Ads','TikTok Ads','Facebook','Instagram','Teman','Pelanggan Lama','Organik'];
@@ -133,6 +134,28 @@ const LeadsPage = () => {
             />
             <button className="btn-secondary" onClick={()=>{ setPage(1); refreshLeads(); }}>Cari</button>
             <button className="btn-secondary" onClick={()=>{ setSearch(''); setPage(1); refreshLeads(); }}>Reset</button>
+            <button className="btn-secondary" onClick={()=>{
+              const csv = toCsv(['createdAt','name','phone','username','csPic','source','address','notes','status','followUp1','followUp2','followUp3','followUp4','followUp5'], leads);
+              downloadCsv('leads.csv', csv);
+            }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{
+                const file = e.target.files?.[0]; if (!file) return;
+                const rows = await parseCsvFile(file);
+                for (const r of rows) {
+                  try {
+                    await leadService.create({
+                      clientId: clientId || user?.clientId,
+                      name: r.name||'', phone: r.phone||'', username: r.username||'', csPic: r.csPic||'', source: r.source||'', address: r.address||'', notes: r.notes||'', status: r.status||'',
+                      followUp1: r.followUp1||null, followUp2: r.followUp2||null, followUp3: r.followUp3||null, followUp4: r.followUp4||null, followUp5: r.followUp5||null,
+                    });
+                  } catch {}
+                }
+                await refreshLeads();
+                e.target.value = '';
+              }} />
+            </label>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4">
@@ -171,7 +194,7 @@ const LeadsPage = () => {
                         options={csPicOptions}
                         value={newLead.csPic || ''}
                         onChange={(v)=>setNewLead({...newLead,csPic:v})}
-                        canDelete={()=>!!newLead.csPic}
+                        canDelete={(label)=>!!label}
                         onCreate={async (label)=>{
                           const activeClientId = user?.role==='CLIENT' ? user?.clientId : clientId;
                           const next = [...csPicOptions, label];

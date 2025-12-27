@@ -7,6 +7,7 @@ import BottomScrollSync from '../../components/common/BottomScrollSync';
 import { clientService } from '../../services/clientService';
 import { adAccountService } from '../../services/adAccountService';
 import { useAuth } from '../../context/AuthContext';
+import { toCsv, downloadCsv, parseCsvFile } from '../../utils/csv';
 
 const MetricsPage = () => {
   const [metrics, setMetrics] = useState([]);
@@ -165,6 +166,13 @@ const MetricsPage = () => {
           <div>
             <h1 className="text-3xl font-bold mb-2">Daily Metrics</h1>
             <p className="text-dark-text-muted">Kelola data performa iklan harian</p>
+          </div>
+          <div className="flex items-end gap-3">
+            <button className="btn-secondary" onClick={()=>{ const csv = toCsv(['date','clientId','adAccountId','platform','spend','revenue','impressions','clicks','leads'], metrics); downloadCsv('metrics.csv', csv); }}>Export CSV</button>
+            <label className="btn-secondary">
+              Import CSV
+              <input type="file" accept=".csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const rows=await parseCsvFile(f); for(const r of rows){ try{ await metricsService.createDailyMetric({ clientId: r.clientId, adAccountId: r.adAccountId, platform: r.platform, date: r.date, spend: Number(r.spend||0), revenue: Number(r.revenue||0), impressions: Number(r.impressions||0), clicks: Number(r.clicks||0), leads: Number(r.leads||0) }); }catch{} } await fetchData(); e.target.value=''; }} />
+            </label>
           </div>
         </div>
 
