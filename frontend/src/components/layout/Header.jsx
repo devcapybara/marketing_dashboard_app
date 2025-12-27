@@ -13,7 +13,7 @@ const Header = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 md:left-64 right-0 h-14 md:h-16 bg-dark-card border-b border-dark-border flex items-center justify-between px-4 md:px-6 z-10">
+    <header className="sticky top-0 h-14 md:h-16 bg-dark-card/60 backdrop-blur border-b border-dark-border flex items-center justify-between px-4 md:px-6 z-20">
       <div className="flex items-center gap-3">
         <button className="md:hidden btn-secondary px-3 py-2" onClick={onToggleSidebar}>☰</button>
         <h2 className="text-base md:text-lg font-semibold">

@@ -11,6 +11,7 @@ async function updateDailyMetricService(metricId, metricData) {
       clicks,
       leads,
       notes,
+      customFields,
     } = metricData;
 
     const metric = await DailyMetric.findById(metricId);
@@ -27,6 +28,9 @@ async function updateDailyMetricService(metricId, metricData) {
     if (clicks !== undefined) metric.clicks = clicks;
     if (leads !== undefined) metric.leads = leads;
     if (notes !== undefined) metric.notes = notes;
+    if (customFields && typeof customFields === 'object') {
+      metric.customFields = { ...(metric.customFields || {}), ...customFields };
+    }
 
     await metric.save();
 

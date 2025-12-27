@@ -5,6 +5,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 // Pages
 import LandingPage from './pages/auth/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import SuperAdminDashboard from './pages/dashboard/SuperAdminDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import ClientDashboard from './pages/dashboard/ClientDashboard';
@@ -43,6 +44,7 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* Protected routes */}
           <Route

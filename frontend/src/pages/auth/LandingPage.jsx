@@ -20,7 +20,19 @@ const LandingPage = () => {
   if (dynamicPage && Array.isArray(dynamicPage.sections) && dynamicPage.sections.length > 0) {
     return (
       <div className="min-h-screen bg-dark-bg">
-        <div className="container mx-auto px-4 py-12">
+        <header className="fixed top-0 left-0 right-0 z-40 bg-dark-card/70 backdrop-blur border-b border-dark-border">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Marketing Dashboard" className="w-8 h-8" />
+              <span className="font-semibold">Marketing Dashboard</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/login" className="btn-secondary">Login</Link>
+              <Link to="/register" className="btn-primary">Register</Link>
+            </div>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 pt-20 pb-12">
           <PageRenderer page={dynamicPage} />
         </div>
       </div>
@@ -33,7 +45,19 @@ const LandingPage = () => {
       <div className="absolute -top-20 -left-20 blob" />
       <div className="absolute -bottom-24 -right-24 blob delay-700" />
 
-      <div className="container mx-auto px-4 py-16 relative">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-dark-card/70 backdrop-blur border-b border-dark-border">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="Marketing Dashboard" className="w-8 h-8" />
+            <span className="font-semibold">Marketing Dashboard</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/login" className="btn-secondary">Login</Link>
+            <Link to="/register" className="btn-primary">Register</Link>
+          </div>
+        </div>
+      </header>
+      <div className="container mx-auto px-4 pt-20 pb-16 relative">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-3 mb-6 px-4 py-2 rounded-full border border-dark-border bg-dark-surface/60 backdrop-blur">
             <img src={logo} alt="Marketing Dashboard" className="w-8 h-8" />
