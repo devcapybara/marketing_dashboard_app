@@ -35,6 +35,15 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
         path: '/audit-logs',
         icon: '🧾',
       });
+      baseMenu.push(
+        { name: 'Overview Sistem', path: '/system/overview', icon: '🧠' },
+        { name: 'Aktivitas Pengguna', path: '/system/user-activity', icon: '👣' },
+        { name: 'Kinerja API', path: '/system/api-performance', icon: '⚡' },
+        { name: 'Jobs & Queue', path: '/system/jobs', icon: '📦' },
+        { name: 'Storage & Integrasi', path: '/system/storage', icon: '🗄️' },
+        { name: 'Konfigurasi Global', path: '/system/config', icon: '⚙️' },
+        { name: 'Webhooks', path: '/system/webhooks', icon: '🔔' },
+      );
     }
 
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
@@ -57,28 +66,14 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
       );
     }
 
-    baseMenu.push(
-      {
-        name: 'Metrics',
-        path: '/metrics',
-        icon: '📈',
-      },
-      {
-        name: 'Leads',
-        path: '/leads',
-        icon: '📇',
-      },
-      {
-        name: 'Topups',
-        path: '/topups',
-        icon: '💰',
-      },
-      {
-        name: 'Calculator',
-        path: '/calculator',
-        icon: '🧮',
-      }
-    );
+    if (user?.role !== 'SUPER_ADMIN') {
+      baseMenu.push(
+        { name: 'Metrics', path: '/metrics', icon: '📈' },
+        { name: 'Leads', path: '/leads', icon: '📇' },
+        { name: 'Topups', path: '/topups', icon: '💰' },
+        { name: 'Calculator', path: '/calculator', icon: '🧮' },
+      );
+    }
 
     return baseMenu;
   };

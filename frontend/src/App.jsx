@@ -39,6 +39,13 @@ import CalculatorPage from './pages/tools/CalculatorPage';
 import CalculatorDetailPage from './pages/tools/CalculatorDetailPage';
 import EditCalculatorPage from './pages/tools/EditCalculatorPage';
 import AuditLogPage from './pages/audit-logs/AuditLogPage';
+import SystemOverviewPage from './pages/system/SystemOverviewPage';
+import UserActivityPage from './pages/system/UserActivityPage';
+import ApiPerformancePage from './pages/system/ApiPerformancePage';
+import JobsPage from './pages/system/JobsPage';
+import StoragePage from './pages/system/StoragePage';
+import GlobalConfigPage from './pages/system/GlobalConfigPage';
+import WebhooksPage from './pages/system/WebhooksPage';
 
 function App() {
   return (
@@ -257,6 +264,62 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
                 <AuditLogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/overview"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <SystemOverviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/user-activity"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <UserActivityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/api-performance"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <ApiPerformancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/jobs"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <JobsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/storage"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <StoragePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/config"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <GlobalConfigPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/system/webhooks"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <WebhooksPage />
               </ProtectedRoute>
             }
           />

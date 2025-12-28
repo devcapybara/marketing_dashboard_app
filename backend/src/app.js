@@ -17,6 +17,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const customMetricFieldRoutes = require('./routes/customMetricFieldRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 const leadRoutes = require('./routes/leadRoutes');
+const systemRoutes = require('./routes/systemRoutes');
 const leadTransactionRoutes = require('./routes/leadTransactionRoutes');
 const calculatorRoutes = require('./routes/calculatorRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
@@ -32,9 +33,33 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(helmet());
 
+// request metrics middleware
+const { record: recordMetric } = require('./utils/requestMetrics');
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationMs = Number(end - start) / 1e6;
+    const routeKey = `${req.method} ${req.route?.path || req.path}`;
+    recordMetric(routeKey, res.statusCode, durationMs);
+  });
+  next();
+});
+
 // health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' });
+  const uptimeSeconds = process.uptime();
+  const startedAt = new Date(Date.now() - uptimeSeconds * 1000).toISOString();
+  const pkg = (() => {
+    try { return require('../../package.json'); } catch { return { version: '0.0.0' }; }
+  })();
+  res.json({
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    uptimeSeconds,
+    startedAt,
+    version: pkg.version,
+  });
 });
 
 // API routes
@@ -48,6 +73,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/custom-metric-fields', customMetricFieldRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api/system', systemRoutes);
 app.use('/api', leadTransactionRoutes);
 app.use('/api/calculator-saves', calculatorRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
