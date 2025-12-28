@@ -27,17 +27,26 @@ function errorHandler(err, req, res, next) {
     error = { message, statusCode: 400 };
   }
 
-  // JWT errors
-  if (err.message && err.message.includes('JWT_SECRET')) {
-    error = { message: err.message, statusCode: 500 };
+  if (
+    err.name === 'JsonWebTokenError' ||
+    err.name === 'TokenExpiredError' ||
+    (err.message && /jwt/i.test(err.message)) ||
+    (err.message && err.message.includes('JWT_SECRET'))
+  ) {
+    error = { message: 'Autentikasi gagal', statusCode: 401 };
   }
+
+  const isDev = process.env.NODE_ENV === 'development';
+  const includeDebug =
+    isDev &&
+    !(err && err.message && (err.message.includes('JWT_SECRET') || /jwt/i.test(err.message)));
 
   res.status(error.statusCode || 500).json({
     success: false,
     message: error.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { 
+    ...(includeDebug && {
       stack: err.stack,
-      error: err.message 
+      error: err.message,
     }),
   });
 }

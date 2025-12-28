@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
+const clientAccessMiddleware = require('../middleware/clientAccessMiddleware');
 
 const createClientController = require('../controllers/client/createClientController');
 const getClientDetailController = require('../controllers/client/getClientDetailController');
@@ -24,7 +25,7 @@ router.post(
 router.get('/', listClientsController);
 
 // Get client detail - All authenticated users
-router.get('/:id', getClientDetailController);
+router.get('/:id', clientAccessMiddleware, getClientDetailController);
 
 // Update client - SUPER_ADMIN and ADMIN only
 router.put(
