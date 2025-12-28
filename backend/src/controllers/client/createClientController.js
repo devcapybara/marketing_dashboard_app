@@ -1,4 +1,5 @@
 const createClientService = require('../../services/client/createClientService');
+const createAuditLogService = require('../../services/audit/createAuditLogService');
 
 async function createClientController(req, res, next) {
   try {
@@ -20,6 +21,15 @@ async function createClientController(req, res, next) {
     };
 
     const newClient = await createClientService(clientData);
+
+    await createAuditLogService({
+      user: req.user,
+      action: 'CREATE_CLIENT',
+      targetModel: 'Client',
+      targetId: newClient._id,
+      details: { data: newClient },
+      ipAddress: req.ip,
+    });
 
     return res.status(201).json({
       success: true,

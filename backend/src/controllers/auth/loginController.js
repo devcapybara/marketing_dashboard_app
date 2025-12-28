@@ -2,6 +2,7 @@ const findUserByEmailService = require('../../services/user/findUserByEmailServi
 const verifyPasswordService = require('../../services/auth/verifyPasswordService');
 const generateJwtService = require('../../services/auth/generateJwtService');
 const User = require('../../models/User');
+const createAuditLogService = require('../../services/audit/createAuditLogService');
 
 async function loginController(req, res, next) {
   try {
@@ -18,6 +19,14 @@ async function loginController(req, res, next) {
     const user = await findUserByEmailService(email);
 
     if (!user) {
+      await createAuditLogService({
+        user: req.user || '000000000000000000000000',
+        action: 'USER_LOGIN_FAIL',
+        targetModel: 'User',
+        targetId: '000000000000000000000000',
+        details: { email, reason: 'user_not_found' },
+        ipAddress: req.ip,
+      });
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -26,6 +35,14 @@ async function loginController(req, res, next) {
 
     // Check if user is active
     if (!user.isActive) {
+      await createAuditLogService({
+        user: user._id,
+        action: 'USER_LOGIN_FAIL',
+        targetModel: 'User',
+        targetId: user._id,
+        details: { email, reason: 'inactive' },
+        ipAddress: req.ip,
+      });
       return res.status(401).json({
         success: false,
         message: 'Account is inactive. Please contact administrator.',
@@ -36,6 +53,14 @@ async function loginController(req, res, next) {
     const isPasswordValid = await verifyPasswordService(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      await createAuditLogService({
+        user: user._id,
+        action: 'USER_LOGIN_FAIL',
+        targetModel: 'User',
+        targetId: user._id,
+        details: { email, reason: 'invalid_password' },
+        ipAddress: req.ip,
+      });
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -67,6 +92,15 @@ async function loginController(req, res, next) {
       clientId: user.clientId ? user.clientId.toString() : null,
       managedClientIds: user.managedClientIds ? user.managedClientIds.map(id => id.toString()) : [],
     };
+
+    await createAuditLogService({
+      user: user._id,
+      action: 'USER_LOGIN_SUCCESS',
+      targetModel: 'User',
+      targetId: user._id,
+      details: { email },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({
       success: true,

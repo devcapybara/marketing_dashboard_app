@@ -1,4 +1,6 @@
 const updateClientService = require('../../services/client/updateClientService');
+const getClientByIdService = require('../../services/client/getClientByIdService');
+const createAuditLogService = require('../../services/audit/createAuditLogService');
 
 async function updateClientController(req, res, next) {
   try {
@@ -12,7 +14,17 @@ async function updateClientController(req, res, next) {
       status,
     };
 
+    const before = await getClientByIdService(id);
     const updatedClient = await updateClientService(id, clientData);
+
+    await createAuditLogService({
+      user: req.user,
+      action: 'UPDATE_CLIENT',
+      targetModel: 'Client',
+      targetId: updatedClient._id,
+      details: { before, after: updatedClient },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({
       success: true,

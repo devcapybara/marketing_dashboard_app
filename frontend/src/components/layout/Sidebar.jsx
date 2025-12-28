@@ -30,6 +30,11 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
         path: '/admins',
         icon: '🛠️',
       });
+      baseMenu.push({
+        name: 'Audit Log',
+        path: '/audit-logs',
+        icon: '🧾',
+      });
     }
 
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {

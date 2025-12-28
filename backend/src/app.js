@@ -19,6 +19,7 @@ const pageRoutes = require('./routes/pageRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const leadTransactionRoutes = require('./routes/leadTransactionRoutes');
 const calculatorRoutes = require('./routes/calculatorRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
 
 // Import error handler
 const errorHandler = require('./middleware/errorHandler');
@@ -49,6 +50,7 @@ app.use('/api/pages', pageRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api', leadTransactionRoutes);
 app.use('/api/calculator-saves', calculatorRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Error handler middleware (must be last)
 app.use(errorHandler);

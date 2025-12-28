@@ -38,6 +38,7 @@ import EditLeadPage from './pages/leads/EditLeadPage';
 import CalculatorPage from './pages/tools/CalculatorPage';
 import CalculatorDetailPage from './pages/tools/CalculatorDetailPage';
 import EditCalculatorPage from './pages/tools/EditCalculatorPage';
+import AuditLogPage from './pages/audit-logs/AuditLogPage';
 
 function App() {
   return (
@@ -248,6 +249,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
                 <AdminsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                <AuditLogPage />
               </ProtectedRoute>
             }
           />
