@@ -130,7 +130,7 @@ const ClientDashboard = () => {
 
         {/* Summary Cards Ordered */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <SummaryCard title="Total Ad Accounts" value={summary?.totalAdAccounts || 0} icon="📱" />
+          <SummaryCard title="Selisih Budget (Top Up - Biaya Marketing + PPN)" value={formatCurrency((summary?.totalTopup || 0) - (summary?.totalSpendWithVat ?? summary?.totalSpend ?? 0))} icon="➖" className="bg-blue-500/20 border-blue-500" />
           <SummaryCard title="Total Biaya Marketing + PPN" value={formatCurrency(summary?.totalSpendWithVat ?? summary?.totalSpend ?? 0)} icon="💰" className="bg-green-500/20 border-green-500" />
           <SummaryCard title="Total Omset" value={formatCurrency(summary?.totalRevenue || 0)} icon="📈" />
           <SummaryCard title="Total Budget Top Up" value={formatCurrency(summary?.totalTopup || 0)} icon="💳" />
